@@ -21,12 +21,13 @@ async function treeRendererTests() {
 
     // Provide a custom CSS var to ensure options are accepted.
     const html = renderTreeAsHtml(tree, { cssVars: { '--pt-node-bg': '#ffeeee' } });
-    const cardCount = (html.match(/class="pt-card"/g) || []).length;
+    const hasVisContainer = html.includes('class="pt-vis"');
+    const dataPresent = html.includes('class="pt-vis-data"');
 
     return {
       input,
-      expected: { containsRoot: true, cardCount: 4 },
-      actual: { containsRoot: html.includes('root'), cardCount },
+      expected: { containsRoot: true, hasVis: true },
+      actual: { containsRoot: html.includes('root'), hasVis: hasVisContainer && dataPresent },
       graphic: html
     };
   });
@@ -37,9 +38,74 @@ async function treeRendererTests() {
     return {
       input,
       expected: { isEmpty: true },
-      // check for the actual element marker to avoid matching class names in the <style> block
-      actual: { isEmpty: !html.includes('class="pt-card"') },
+      // check that it renders the empty placeholder
+      actual: { isEmpty: html.includes('(no nodes)') },
       graphic: html
     };
   });
+
+    await test('renderTreeAsHtml includes images, description and date in cards', async () => {
+      // Uses images from /resource/ to ensure the renderer emits valid <img> tags
+      const tree = {
+        nodes: [
+          { post_id: 10, title: 'WithImage', description: 'An item with an image', file: '/resource/test1.jpg', created_at: '2020-01-02T00:00:00Z' },
+          { post_id: 11, title: 'WithImage2', description: 'Second image', file: '/resource/test2.jpg', created_at: new Date('2021-03-04') }
+        ],
+        edges: []
+      };
+      const input = { tree };
+
+      const html = renderTreeAsHtml(tree);
+      const dataPresent = html.includes('class="pt-vis-data"');
+      const hasImg1 = html.indexOf('/resource/test1.jpg') !== -1;
+      const hasImg2 = html.indexOf('/resource/test2.jpg') !== -1;
+      const hasDate1 = html.indexOf('2020-01-02') !== -1;
+      const hasDate2 = html.indexOf('2021-03-04') !== -1;
+
+      return {
+        input,
+        expected: { hasData: true, hasImages: true, hasDates: true },
+        actual: { hasData: dataPresent, hasImages: hasImg1 && hasImg2, hasDates: hasDate1 && hasDate2 },
+        graphic: html
+      };
+    });
+
+
+    await test('sample recipe graph renders with images and vis data', async () => {
+      const tree = {
+        nodes: [
+          { post_id: 1, title: "Mum's apple pie", description: 'Original recipe, 1954', created_at: '1954-01-01', file: '/resource/test1.jpg' },
+          { post_id: 2, title: 'Sarah', description: 'Added a lattice crust', created_at: '1981-01-01', file: '/resource/test2.jpg' },
+          { post_id: 3, title: 'Aunty Rosa', description: 'Swapped in a shortcrust base', created_at: '1998-01-01', file: '/resource/test1.jpg' },
+          { post_id: 4, title: 'Little Mia', description: "Rosa's granddaughter", created_at: '2024-01-01', file: '/resource/test2.jpg' },
+          { post_id: 5, title: 'Grandad Tom', description: "Says it's better with less sugar", created_at: '2005-01-01', file: '/resource/test1.jpg' },
+          { post_id: 6, title: 'Uncle Dave', description: 'Used a splash of brandy', created_at: '2012-01-01', file: '/resource/test2.jpg' },
+          { post_id: 7, title: 'Emily', description: 'First attempt, filling turned out too runny', created_at: '2026-01-01', file: '/resource/test1.jpg' },
+          { post_id: 8, title: 'Cousin Ben', description: 'Tried a gluten-free version', created_at: '2019-01-01', file: '/resource/test2.jpg' }
+        ],
+        edges: [
+          { from: 1, to: 2 },
+          { from: 1, to: 3 },
+          { from: 3, to: 4 },
+          { from: 1, to: 5 },
+          { from: 5, to: 6 },
+          { from: 1, to: 7 },
+          { from: 1, to: 8 }
+        ]
+      };
+
+      const input = { tree };
+      const html = renderTreeAsHtml(tree);
+      const hasVisContainer = html.includes('class="pt-vis"');
+      const hasData = html.includes('class="pt-vis-data"');
+      const hasRoot = html.indexOf("Mum's apple pie") !== -1;
+      const hasImages = html.indexOf('/resource/test1.jpg') !== -1 && html.indexOf('/resource/test2.jpg') !== -1;
+
+      return {
+        input,
+        expected: { hasVis: true, hasRoot: true, hasImages: true },
+        actual: { hasVis: hasVisContainer && hasData, hasRoot, hasImages },
+        graphic: html
+      };
+    });
 }

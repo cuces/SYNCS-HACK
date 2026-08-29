@@ -92,6 +92,10 @@ function renderReport() {
         container.className = 'graphic';
         container.innerHTML = value;
         wrap.appendChild(container);
+        // After insertion, attempt to enhance the graph (draw edges) if available.
+        if (typeof window.enhanceGraph === 'function') {
+          try { window.enhanceGraph(container); } catch (e) { console.warn('enhanceGraph error', e); }
+        }
       } else {
         const pre = document.createElement('pre');
         pre.textContent = value;
