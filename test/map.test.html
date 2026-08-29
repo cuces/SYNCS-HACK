@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>map view test runner</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    /* --- shared report styling (same as tests.html) --- */
+    body { font-family: system-ui, sans-serif; margin: 2rem; background: #fafafa; color: #222; }
+    h1 { font-size: 1.25rem; }
+    #summary { font-weight: bold; margin: 1rem 0; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 0.6rem 0.8rem; margin: 0.5rem 0; border-radius: 6px; border: 1px solid rgba(0,0,0,0.08); }
+    li.pass { background: #e6f4ea; }
+    li.fail { background: #fce8e6; }
+    li .head { font-weight: 600; font-family: ui-monospace, monospace; font-size: 0.9rem; margin-bottom: 0.4rem; }
+    li.pass .head { color: #1e4620; }
+    li.fail .head { color: #611a15; }
+    .block { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.5rem; align-items: start; margin: 0.15rem 0; }
+    .block .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; padding-top: 0.35rem; }
+    .block pre { margin: 0; padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.7); border-radius: 4px;
+                 font-family: ui-monospace, monospace; font-size: 0.78rem; white-space: pre-wrap; word-break: break-word; overflow-x: auto; }
+
+    /* Leaflet needs a sized, visible container to measure itself. */
+    #test-map { width: 640px; height: 360px; margin-top: 1rem; border: 1px solid #ccc; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>map view — marker rendering tests</h1>
+  <div id="summary">Running…</div>
+  <ul id="results"></ul>
+
+  <!-- Live map the tests render into (also handy to eyeball the last test's result) -->
+  <div id="test-map"></div>
+
+  <!-- Leaflet + Dexie, then our modules, then the harness, then the tests -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
+  <script src="../src/geo.js"></script>
+  <script src="../src/db.js"></script>
+  <script src="../src/mapView.js"></script>
+  <script src="harness.js"></script>
+  <script src="map.test.js"></script>
+</body>
+</html>

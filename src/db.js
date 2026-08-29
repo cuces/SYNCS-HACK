@@ -56,7 +56,10 @@ async function createPost({
   tags = [], // Searchable labels attached to this post
   category, // Content category such as photo, note, memory, etc.
   adapted_from = null, // Parent post if this is derived from an existing one
-  is_published = false // True when the item should appear on the public board
+  is_published = false, // True when the item should appear on the public board
+  country = null, // Country the knowledge comes from, e.g. "Vietnam" — optional
+  lat = null, // Latitude for the map view — optional, usually derived from `country`
+  lng = null // Longitude for the map view — optional
 }) {
   return db.posts.add({
     poster_id,
@@ -68,6 +71,11 @@ async function createPost({
     category,
     adapted_from,
     is_published,
+    // Location is optional. The create-post form fills lat/lng from the picked
+    // country (see geo.js). Posts with no location simply don't appear on the map.
+    country,
+    lat,
+    lng,
     mentioned: [],
     liked_by: [],
     created_at: new Date()

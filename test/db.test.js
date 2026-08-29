@@ -209,14 +209,31 @@ async function postTests() {
       expected: {
         title: 'Pho broth', category: 'recipe',
         tags: [], mentioned: [], liked_by: [],
-        adapted_from: null, is_published: false, createdAtIsDate: true
+        adapted_from: null, is_published: false, createdAtIsDate: true,
+        country: null, lat: null, lng: null
       },
       actual: {
         title: row.title, category: row.category,
         tags: row.tags, mentioned: row.mentioned, liked_by: row.liked_by,
         adapted_from: row.adapted_from, is_published: row.is_published,
-        createdAtIsDate: row.created_at instanceof Date
+        createdAtIsDate: row.created_at instanceof Date,
+        country: row.country, lat: row.lat, lng: row.lng
       }
+    };
+  });
+
+  await test('createPost stores country/lat/lng when the form provides them', async () => {
+    const familyId = await createFamily('Nguyen');
+    const input = {
+      poster_id: 1, family_id: familyId, title: 'Phở', description: '', file: null,
+      category: 'recipe', country: 'Vietnam', lat: 14.058, lng: 108.277
+    };
+    const postId = await createPost(input);
+    const row = await db.posts.get(postId);
+    return {
+      input,
+      expected: { country: 'Vietnam', lat: 14.058, lng: 108.277 },
+      actual: { country: row.country, lat: row.lat, lng: row.lng }
     };
   });
 
