@@ -5,19 +5,16 @@ editorial archive for a family's stories, recipes and traditions.
 
 ## Usage
 
-test using 
+Create a demo server using 
 ```py
 python -m http.server
-``` 
-or
-```py
+# or 
 python3 -m http.server
-```
-enter the link
+``` 
+Then open the link
 ```
 http://localhost:8000/src/pages/index.html
 ```
-
 ## Project layout
 
 ```
