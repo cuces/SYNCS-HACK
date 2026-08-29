@@ -342,11 +342,196 @@ async function filterTests() {
   });
 }
 
+// ---------- Bigger scenario: related vs unrelated tags & countries ----------
+//
+// A dumpling recipe that spread across families and borders:
+//
+//        1 Grandma's jiaozi ........... China   [dumpling, pork, festive]
+//        ├── 2 Mum's potstickers ...... China   [dumpling, pork, pan-fried]
+//        │   ├── 4 Seoul mandu ........ S.Korea [dumpling, pork, kimchi]
+//        │   │   └── 7 Kathmandu momo .. Nepal  [dumpling, pork, spicy]   (no coords)
+//        │   └── 6 Freezer notes ...... (none)  [dumpling, make-ahead]    (unlocated)
+//        └── 3 Aunt's veg jiaozi ...... China   [dumpling, vegetarian]
+//            └── 5 Warsaw pierogi ..... Poland  [dumpling, vegetarian, potato]
+//
+// "Related"   = shares a country or a tag with the rest of the lineage
+//               (China x3; `dumpling` on all; `pork` down one whole branch).
+// "Unrelated" = appears once, connected to nothing else by that facet
+//               (`make-ahead` only on 6; `kimchi` only on 4; Nepal only on 7).
+
+function archiveTree() {
+  const CN = [35.86, 104.19];   // China
+  const KR = [35.90, 127.77];   // South Korea
+  const PL = [51.90, 19.14];    // Poland
+  return {
+    nodes: [
+      { post_id: 1, title: "Grandma's jiaozi",  country: 'China',       tags: ['dumpling', 'pork', 'festive'],           lat: CN[0], lng: CN[1] },
+      { post_id: 2, title: "Mum's potstickers", country: 'China',       tags: ['dumpling', 'pork', 'pan-fried'],         lat: CN[0], lng: CN[1] },
+      { post_id: 3, title: "Aunt's veg jiaozi", country: 'China',       tags: ['dumpling', 'vegetarian'],                lat: CN[0], lng: CN[1] },
+      { post_id: 4, title: 'Seoul mandu',       country: 'South Korea', tags: ['dumpling', 'pork', 'kimchi'],            lat: KR[0], lng: KR[1] },
+      { post_id: 5, title: 'Warsaw pierogi',    country: 'Poland',      tags: ['dumpling', 'vegetarian', 'potato'],      lat: PL[0], lng: PL[1] },
+      { post_id: 6, title: 'Freezer notes',     country: null,          tags: ['dumpling', 'make-ahead'],                lat: null,  lng: null },  // unlocated
+      { post_id: 7, title: 'Kathmandu momo',    country: 'Nepal',       tags: ['dumpling', 'pork', 'spicy'],             lat: null,  lng: null }   // country set, but not geocodable
+    ],
+    edges: [
+      { from: 1, to: 2 }, { from: 1, to: 3 },
+      { from: 2, to: 4 }, { from: 3, to: 5 },
+      { from: 2, to: 6 }, { from: 4, to: 7 }
+    ]
+  };
+}
+
+async function scenarioTests() {
+  const ids = (t) => t.nodes.map((n) => n.post_id);
+  const edgeKeys = (t) => t.edges.map((e) => `${e.from}-${e.to}`);
+  const plot = (filter) => {
+    const shown = filterTree(archiveTree(), filter);
+    const map = freshTestMap();
+    const r = plotTreeOnMap(map, shown);
+    return { shown, r };
+  };
+
+  await test('scenario: the whole archive at a glance (facets available to filter on)', async () => {
+    const tree = archiveTree();
+    return {
+      input: { posts: 7, note: 'China repeats x3; every post is tagged "dumpling"' },
+      expected: {
+        countries: ['China', 'Nepal', 'Poland', 'South Korea'],
+        tags: ['dumpling', 'festive', 'kimchi', 'make-ahead', 'pan-fried', 'pork', 'potato', 'spicy', 'vegetarian'],
+        locatedPosts: 5, unlocatedPosts: 2
+      },
+      actual: {
+        countries: distinctCountries(tree),
+        tags: distinctTags(tree),
+        locatedPosts: tree.nodes.filter((n) => n.lat != null).length,
+        unlocatedPosts: tree.nodes.filter((n) => n.lat == null).length
+      }
+    };
+  });
+
+  await test('RELATED country: "China" is shared by 3 posts across 2 branches', async () => {
+    const { shown, r } = plot({ country: 'China' });
+    return {
+      input: { filter: { country: 'China' } },
+      // 1,2,3 kept; edges 1->2 and 1->3 survive; 2->4, 3->5, 2->6 are pruned
+      expected: { nodeIds: [1, 2, 3], edges: ['1-2', '1-3'], markers: 3, lines: 2, skipped: 0 },
+      actual: { nodeIds: ids(shown), edges: edgeKeys(shown), markers: r.markers, lines: r.lines, skipped: r.skipped }
+    };
+  });
+
+  await test('UNRELATED country: "Nepal" belongs to one post, which has no coords → no marker', async () => {
+    const { shown, r } = plot({ country: 'Nepal' });
+    return {
+      input: { filter: { country: 'Nepal' }, note: 'post 7 has a country but no lat/lng' },
+      expected: { nodeIds: [7], edges: [], markers: 0, lines: 0, skipped: 1 },
+      actual: { nodeIds: ids(shown), edges: edgeKeys(shown), markers: r.markers, lines: r.lines, skipped: r.skipped }
+    };
+  });
+
+  await test('RELATED tag: "dumpling" spans the entire lineage — nothing is dropped', async () => {
+    const { shown, r } = plot({ tags: ['dumpling'] });
+    return {
+      input: { filter: { tags: ['dumpling'] } },
+      // all 7 nodes + all 6 edges; 5 markers, 2 unlocated posts skipped,
+      // 4 lines (the 2 edges into unlocated posts 6 & 7 can't be drawn)
+      expected: { nodeCount: 7, edgeCount: 6, markers: 5, lines: 4, skipped: 2 },
+      actual: { nodeCount: shown.nodes.length, edgeCount: shown.edges.length, markers: r.markers, lines: r.lines, skipped: r.skipped }
+    };
+  });
+
+  await test('RELATED tag down one branch: "pork" keeps a fully-connected chain 1→2→4→7', async () => {
+    const { shown, r } = plot({ tags: ['pork'] });
+    return {
+      input: { filter: { tags: ['pork'] } },
+      expected: { nodeIds: [1, 2, 4, 7], edges: ['1-2', '2-4', '4-7'], markers: 3, lines: 2, skipped: 1 },
+      actual: { nodeIds: ids(shown), edges: edgeKeys(shown), markers: r.markers, lines: r.lines, skipped: r.skipped }
+    };
+  });
+
+  await test('UNRELATED tag: "make-ahead" is on one unlocated post → single node, no edges, empty map', async () => {
+    const { shown, r } = plot({ tags: ['make-ahead'] });
+    return {
+      input: { filter: { tags: ['make-ahead'] } },
+      expected: { nodeIds: [6], edges: [], markers: 0, lines: 0, skipped: 1 },
+      actual: { nodeIds: ids(shown), edges: edgeKeys(shown), markers: r.markers, lines: r.lines, skipped: r.skipped }
+    };
+  });
+
+  await test('UNRELATED tags together (AND): "pork" + "vegetarian" never co-occur → nothing', async () => {
+    const { shown, r } = plot({ tags: ['pork', 'vegetarian'] });
+    return {
+      input: { filter: { tags: ['pork', 'vegetarian'] } },
+      expected: { nodeIds: [], markers: 0 },
+      actual: { nodeIds: ids(shown), markers: r.markers }
+    };
+  });
+
+  await test('RELATED tags together (AND): "dumpling" + "pork" co-occur on the pork branch', async () => {
+    const { shown } = plot({ tags: ['dumpling', 'pork'] });
+    return {
+      input: { filter: { tags: ['dumpling', 'pork'] }, note: '"dumpling" is on every post, so this narrows to "pork"' },
+      expected: { nodeIds: [1, 2, 4, 7] },
+      actual: { nodeIds: ids(shown) }
+    };
+  });
+
+  await test('RELATED country + tag: China ∩ vegetarian is exactly post 3', async () => {
+    const { shown, r } = plot({ country: 'China', tags: ['vegetarian'] });
+    return {
+      input: { filter: { country: 'China', tags: ['vegetarian'] } },
+      expected: { nodeIds: [3], markers: 1 },
+      actual: { nodeIds: ids(shown), markers: r.markers }
+    };
+  });
+
+  await test('UNRELATED country + tag: China ∩ kimchi is empty (kimchi is only in South Korea)', async () => {
+    const { shown, r } = plot({ country: 'China', tags: ['kimchi'] });
+    return {
+      input: { filter: { country: 'China', tags: ['kimchi'] } },
+      expected: { nodeIds: [], markers: 0 },
+      actual: { nodeIds: ids(shown), markers: r.markers }
+    };
+  });
+
+  await test('scenario via the real DB path: seed the archive, walk it, filter it', async () => {
+    const familyId = await createFamily('Chen');
+    const src = archiveTree();
+    const idMap = {};
+    // create posts parent-first so adapted_from always resolves
+    for (const n of src.nodes) {
+      const parentEdge = src.edges.find((e) => e.to === n.post_id);
+      idMap[n.post_id] = await createPost({
+        poster_id: 1, family_id: familyId, title: n.title, description: '', file: null,
+        category: 'recipe', tags: n.tags, is_published: true,
+        adapted_from: parentEdge ? idMap[parentEdge.from] : null,
+        country: n.country, lat: n.lat, lng: n.lng
+      });
+    }
+
+    const tree = await getFullTree(idMap[7]); // start from a leaf — full tree still comes back
+    const porkOnly = filterTree(tree, { tags: ['pork'] });
+    const map = freshTestMap();
+    const r = plotTreeOnMap(map, porkOnly);
+
+    return {
+      input: { seededPosts: src.nodes.length, startedFrom: 'Kathmandu momo (leaf)', filter: { tags: ['pork'] } },
+      expected: { fullTreeNodes: 7, porkTitles: ["Grandma's jiaozi", "Mum's potstickers", 'Seoul mandu', 'Kathmandu momo'], markers: 3, lines: 2 },
+      actual: {
+        fullTreeNodes: tree.nodes.length,
+        porkTitles: porkOnly.nodes.map((n) => n.title),
+        markers: r.markers,
+        lines: r.lines
+      }
+    };
+  });
+}
+
 // ---------- Run ----------
 
 (async function run() {
   await geoTests();
   await mapViewTests();
   await filterTests();
+  await scenarioTests();
   renderReport();
 })();
