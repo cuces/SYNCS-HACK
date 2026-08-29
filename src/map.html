@@ -282,15 +282,16 @@
       applyFiltersAndRender();
     });
 
-    // ---------- STANDALONE DEMO DATA (delete once wired into the real app) ----------
+    // ---------- STANDALONE DEMO DATA ----------
 
-    // Seeds a small lineage so the map has something to show on its own:
+    // Seeds a small lineage so the map has something to show when the archive
+    // is otherwise empty. Only ever called when db.posts is empty (see boot),
+    // so it never touches real data.
     //
     //   Vietnam ──▶ Mexico ──▶ France
     //      └──▶ (a post with NO location)
     //
     async function seedDemoData() {
-      await Promise.all([db.posts.clear(), db.families.clear()]);
       const familyId = await createFamily("Demo Family");
 
       const make = (title, country, tags, adapted_from = null) => {
@@ -328,13 +329,29 @@
     let showingMap = false;
     let demoRootId = null;
 
+    // Resolve which post's lineage to show:
+    //   1. ?root=<post_id> on the URL (post.html passes the memory being viewed)
+    //   2. otherwise the first published post
+    //   3. otherwise seed demo data (only when the archive is completely empty)
+    async function resolveRootId() {
+      const requested = Number(new URLSearchParams(location.search).get("root"));
+      if (requested && (await db.posts.get(requested))) return requested;
+
+      if ((await db.posts.count()) === 0) return seedDemoData();
+
+      const published = await getPublishedPosts();
+      if (published.length) return published[0].post_id;
+      const any = await db.posts.toCollection().first();
+      return any ? any.post_id : null;
+    }
+
     async function boot() {
-      demoRootId = await seedDemoData();
-      const total = await db.posts.count();
-      statusEl.textContent =
-        `Seeded ${total} demo posts (3 with a country, 1 without).\n` +
-        `Click "Show map view" — expect 3 markers and 2 connecting lines.`;
-      // Render the graph view for the seeded data
+      demoRootId = await resolveRootId();
+      if (demoRootId == null) {
+        statusEl.textContent = "No memories to map yet.";
+        return;
+      }
+      // Render the graph view for the resolved lineage
       try { await renderGraphView(demoRootId); } catch (e) { console.warn('initial renderGraphView failed', e); }
     }
 
@@ -370,8 +387,6 @@
     }
 
     boot();
-    // Render graph view initially (map is hidden by default)
-    (async () => { if (demoRootId != null) await renderGraphView(demoRootId); })();
   </script>
 
 </body>

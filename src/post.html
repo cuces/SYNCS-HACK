@@ -36,7 +36,9 @@ body {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
   padding: 44px 20px;
 }
 img { display: block; max-width: 100%; }
@@ -216,7 +218,19 @@ ul, ol { margin: 0; padding: 0; }
 }
 [hidden] { display: none !important; }
 
+/* ===== Embedded lineage map / graph (the whole of map.html) ===== */
+.lineage-map {
+  width: 100%;
+  max-width: 900px;
+  height: 900px;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: var(--card);
+  box-shadow: 0 20px 50px rgba(41,36,31,0.10), 0 2px 8px rgba(41,36,31,0.06);
+}
+
 @media (max-width: 480px) {
+  .lineage-map { height: 760px; border-radius: 20px; }
   body { padding: 20px 12px; }
   .card { padding: 16px 16px 20px 16px; border-radius: 20px; }
   .detail-image { height: 220px; }
@@ -311,6 +325,17 @@ ul, ol { margin: 0; padding: 0; }
   <div id="postState" hidden></div>
 
 </div>
+
+<!-- The entire map.html (lineage graph + geographic map), embedded below the
+     memory. It's a full standalone page, so it lives in its own iframe;
+     ?root=<id> points its graph at the memory being viewed. -->
+<iframe class="lineage-map" id="lineageMap" title="Lineage graph and map" loading="lazy"></iframe>
+<script>
+  (function () {
+    var id = new URLSearchParams(window.location.search).get('id');
+    document.getElementById('lineageMap').src = 'map.html' + (id ? '?root=' + encodeURIComponent(id) : '');
+  })();
+</script>
 
 <!-- Load order: Dexie -> db.js -> app/ui.js -> app/data.js -> page controller -->
 <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
