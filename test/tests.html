@@ -31,6 +31,8 @@
   <!-- Dexie must load before db.js, db.js before the tests -->
   <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
   <script src="../src/db.js"></script>
+  <script src="../src/auth.js"></script>
+  <script src="../src/app/data.js"></script>
   <!-- vis-network for graph rendering -->
   <link rel="stylesheet" href="https://unpkg.com/vis-network/styles/vis-network.css" />
   <script src="https://unpkg.com/vis-network/dist/vis-network.min.js"></script>
@@ -39,5 +41,6 @@
   <script src="tree.test.js"></script>
   <script src="seed.test.js"></script>
   <script src="db.test.js"></script>
+  <script src="data-view.test.js"></script>
 </body>
 </html>
