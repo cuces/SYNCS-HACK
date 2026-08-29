@@ -215,12 +215,44 @@
           visContainer.style.display = 'block';
           // After initial stabilization, disable physics so the graph stops moving/rotating.
           try {
+            // After stabilization, reduce physics intensity rather than disabling it
             network.once && network.once('stabilizationIterationsDone', function () {
-              try { network.setOptions({ physics: { enabled: false } }); } catch (e) {}
+              try {
+                network.setOptions({
+                  physics: {
+                    enabled: true,
+                    barnesHut: {
+                      gravitationalConstant: -1500,
+                      centralGravity: 0.12,
+                      springLength: 220,
+                      springConstant: 0.02,
+                      avoidOverlap: 0.5
+                    },
+                    stabilization: { enabled: false }
+                  }
+                });
+              } catch (e) {}
             });
           } catch (e) {}
-          // Fallback: ensure physics is turned off shortly after render if events not fired.
-          setTimeout(() => { try { network.setOptions({ physics: { enabled: false } }); network.redraw(); } catch (e) {} }, 800);
+          // Fallback: if stabilization event doesn't fire, reduce physics shortly after render
+          setTimeout(() => {
+            try {
+              network.setOptions({
+                physics: {
+                  enabled: true,
+                  barnesHut: {
+                    gravitationalConstant: -1500,
+                    centralGravity: 0.12,
+                    springLength: 220,
+                    springConstant: 0.02,
+                    avoidOverlap: 0.5
+                  },
+                  stabilization: { enabled: false }
+                }
+              });
+              network.redraw();
+            } catch (e) {}
+          }, 800);
           setTimeout(() => { try { network.redraw(); } catch (e) {} }, 150);
           return;
         } catch (e) {
