@@ -192,21 +192,23 @@ async function treeRendererTests() {
       };
     });
 
-    // enhanceGraph should use physics ONLY to lay the tree out, then switch it
-    // off — otherwise the force-directed graph keeps drifting/rotating on the page.
-    await test('enhanceGraph turns physics off once the layout has stabilised', async () => {
-      // Minimal fake vis-network that records setOptions calls and fires the
-      // stabilization event on the next tick.
+    // enhanceGraph uses a HIERARCHICAL layout (deterministic, no overlap, no
+    // rotation) and switches physics off once it's placed.
+    await test('enhanceGraph lays the graph out hierarchically and turns physics off', async () => {
       const setOptionsCalls = [];
-      let storePositionsCalled = false;
+      let ctorOptions = null;
       const realVis = window.vis;
       window.vis = {
         Network: function (el, data, options) {
+          ctorOptions = options;
           this._handlers = {};
           this.once = (ev, fn) => { this._handlers[ev] = fn; };
           this.setOptions = (o) => { setOptionsCalls.push(o); };
-          this.storePositions = () => { storePositionsCalled = true; };
+          this.storePositions = () => {};
           this.redraw = () => {};
+          this.fit = () => {};
+          this.moveTo = () => {};
+          this.getPositions = () => ({ 1: { x: 0, y: 0 }, 2: { x: 0, y: 150 } });
           setTimeout(() => {
             if (this._handlers['stabilizationIterationsDone']) this._handlers['stabilizationIterationsDone']();
           }, 0);
@@ -223,21 +225,18 @@ async function treeRendererTests() {
 
         // No fake vis.DataSet => enhanceGraph takes the non-animated path.
         enhanceGraph(container);
-        // let the fake stabilization event fire
-        await new Promise((r) => setTimeout(r, 20));
+        await new Promise((r) => setTimeout(r, 20)); // let the fake stabilization event fire
 
-        const physicsDisabled = setOptionsCalls.some(
-          (o) => o && o.physics && o.physics.enabled === false
-        );
-        const physicsReEnabled = setOptionsCalls.some(
-          (o) => o && o.physics && o.physics.enabled === true
-        );
+        const hierarchical = !!(ctorOptions && ctorOptions.layout &&
+          ctorOptions.layout.hierarchical && ctorOptions.layout.hierarchical.enabled);
+        const physicsDisabled = setOptionsCalls.some((o) => o && o.physics && o.physics.enabled === false);
+        const physicsReEnabled = setOptionsCalls.some((o) => o && o.physics && o.physics.enabled === true);
 
         container.remove();
         return {
           input: { fakeVis: true },
-          expected: { physicsDisabled: true, physicsReEnabled: false, positionsStored: true },
-          actual: { physicsDisabled, physicsReEnabled, positionsStored: storePositionsCalled }
+          expected: { hierarchical: true, physicsDisabled: true, physicsReEnabled: false },
+          actual: { hierarchical, physicsDisabled, physicsReEnabled }
         };
       } finally {
         window.vis = realVis;
@@ -283,19 +282,12 @@ async function treeRendererTests() {
       };
     });
 
-    await test('enhanceGraph reveals nodes in waves and freezes physics at the end', async () => {
+    await test('enhanceGraph reveals nodes wave by wave, re-centres each time, and freezes at the end', async () => {
       let addCalls = 0;
+      let moveToCalls = 0;
+      let lastMoveTo = null;
       const setOptionsCalls = [];
       const realVis = window.vis;
-
-      let unpinnedAtEnd = false;
-      let rootEverPinned = false;
-      let moveToCalls = 0;
-      const noteItem = (it) => {
-        if (!it || it.id !== 1) return;
-        if (it.fixed && it.fixed !== undefined && it.fixed !== false) rootEverPinned = true;
-        if (it.fixed === false) unpinnedAtEnd = true;
-      };
 
       function FakeDataSet(init) {
         this._byId = new Map();
@@ -304,7 +296,7 @@ async function treeRendererTests() {
       FakeDataSet.prototype.add = function (x) {
         addCalls++;
         const arr = Array.isArray(x) ? x : [x];
-        for (const item of arr) { if (item && item.id != null) this._byId.set(item.id, item); noteItem(item); }
+        for (const item of arr) if (item && item.id != null) this._byId.set(item.id, item);
         return arr.map((i) => i && i.id);
       };
       FakeDataSet.prototype.update = function (x) {
@@ -312,7 +304,6 @@ async function treeRendererTests() {
         for (const u of arr) {
           const cur = this._byId.get(u.id) || { id: u.id };
           this._byId.set(u.id, Object.assign(cur, u));
-          noteItem(u);
         }
       };
       FakeDataSet.prototype.get = function () { return [...this._byId.values()]; };
@@ -327,11 +318,11 @@ async function treeRendererTests() {
         },
         Network: function (el, data, options) {
           this.setOptions = (o) => setOptionsCalls.push(o);
-          this.storePositions = () => {};
           this.redraw = () => {};
           this.fit = () => {};
-          this.moveTo = () => { moveToCalls++; };
-          this.getPositions = () => ({});
+          this.moveTo = (o) => { moveToCalls++; lastMoveTo = o; };
+          // pretend the layout spans a box so centreAndFit has something to aim at
+          this.getPositions = () => ({ 1: { x: 0, y: 0 }, 2: { x: -100, y: 150 }, 3: { x: 100, y: 150 }, 4: { x: -100, y: 300 } });
           this.once = () => {};
         }
       };
@@ -350,36 +341,30 @@ async function treeRendererTests() {
         document.body.appendChild(container);
 
         enhanceGraph(container, { waveMs: 40 }); // fast waves for the test
-        // 3 waves * 40ms + per-wave refit + two-stage end settle + margin
         await new Promise((r) => setTimeout(r, 1400));
 
         const firstDS = nodeDataSets[0];
         const nodesRevealed = firstDS ? firstDS.get().length : 0;
-        const physicsFrozen = setOptionsCalls.some(
-          (o) => o && o.physics && o.physics.enabled === false
-        );
-        const root = firstDS && firstDS.get().find((n) => n.id === 1);
-        const rootHeldAtOrigin = !!(root && root.x === 0 && root.y === 0);
+        const physicsFrozen = setOptionsCalls.some((o) => o && o.physics && o.physics.enabled === false);
+        // centreAndFit aims moveTo at the midpoint of the bounding box: x=0, y=150
+        const centredOnBoundingBox = !!(lastMoveTo && lastMoveTo.position &&
+          lastMoveTo.position.x === 0 && lastMoveTo.position.y === 150);
 
         container.remove();
         return {
           input: { waveMs: 40, tree: '1 -> (2,3), 2 -> 4' },
           expected: {
             allNodesRevealed: 4,
-            revealedInMultipleBatches: true,   // 3 node-adds + 3 edge-adds, not one dump
-            rootPinnedDuringGrowth: true,
-            rootHeldAtOrigin: true,
-            cameraReframedEachWave: true,       // moveTo per wave keeps root centred
-            pinsReleasedAtEnd: true,
+            revealedInMultipleBatches: true, // 3 node-adds + 3 edge-adds, not one dump
+            reCentredSeveralTimes: true,
+            centredOnBoundingBox: true,
             physicsFrozen: true
           },
           actual: {
             allNodesRevealed: nodesRevealed,
             revealedInMultipleBatches: addCalls >= 4,
-            rootPinnedDuringGrowth: rootEverPinned,
-            rootHeldAtOrigin,
-            cameraReframedEachWave: moveToCalls >= 3,
-            pinsReleasedAtEnd: unpinnedAtEnd,
+            reCentredSeveralTimes: moveToCalls >= 3,
+            centredOnBoundingBox,
             physicsFrozen
           }
         };

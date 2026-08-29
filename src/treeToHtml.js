@@ -254,8 +254,8 @@
         const options = {
           nodes: {
             shape: 'box',
-            margin: 12,
-            widthConstraint: { maximum: 240 },
+            margin: 10,
+            widthConstraint: { maximum: 170 }, // keep boxes narrow so rows fit
             shapeProperties: { borderRadius: 8 },
             font: { color: '#2f2a24' },
             color: {
@@ -269,22 +269,30 @@
           edges: {
             color: { color: 'rgba(80,70,60,0.22)' },
             width: 2,
-            smooth: { enabled: true, type: 'dynamic' }
+            smooth: { enabled: true, type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.5 }
           },
-          layout: { improvedLayout: true },
-          interaction: { hover: true, tooltipDelay: 200, hoverConnectedEdges: true },
+          // Top-down HIERARCHICAL layout: the root sits at the top and every
+          // generation is its own row. The engine *places* nodes rather than
+          // simulating them, so they never overlap and the graph never rotates.
+          layout: {
+            hierarchical: {
+              enabled: true,
+              direction: 'UD',
+              sortMethod: 'directed',
+              levelSeparation: 150,
+              nodeSpacing: 200,
+              treeSpacing: 240,
+              parentCentralization: true,
+              blockShifting: true,
+              edgeMinimization: true
+            }
+          },
+          interaction: { hover: true, tooltipDelay: 200, hoverConnectedEdges: true, dragNodes: true },
           physics: {
             enabled: true,
-            barnesHut: {
-              gravitationalConstant: -12000,
-              centralGravity: 0.3,
-              springLength: 200,
-              springConstant: 0.04,
-              avoidOverlap: 1
-            },
-            // Run the whole stabilization off-screen and only paint the final
-            // layout, so the user never sees the graph settling/spinning.
-            stabilization: { enabled: true, iterations: 400, updateInterval: 400, fit: true }
+            hierarchicalRepulsion: { nodeDistance: 200, avoidOverlap: 1, springLength: 120 },
+            minVelocity: 0.6,
+            stabilization: { enabled: true, iterations: 300, updateInterval: 300, fit: true }
           }
         };
         try {
@@ -304,190 +312,86 @@
           })();
           const animate = !!DataSet && opts.animate !== false && !reduceMotion && allNodes.length > 1;
 
-          // Physics is only used to lay the tree out. Once it settles we turn it
-          // OFF completely — otherwise the force-directed layout keeps drifting
-          // and rotating (it has no fixed orientation) and every hover/drag
-          // nudges it again.
           let network;
+          const fitAnim = { duration: 600, easingFunction: 'easeInOutQuad' };
+
+          // Zoom to fit the whole graph AND centre it in the viewport. We do
+          // this by hand (rather than network.fit()) so the graph always ends
+          // up dead-centre: take the bounding box of every node, aim the camera
+          // at its midpoint, and scale so it fits with a margin.
+          const centreAndFit = (withAnim) => {
+            try {
+              const pos = network.getPositions();
+              const ids = Object.keys(pos);
+              if (!ids.length) return;
+              let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+              for (const id of ids) {
+                const p = pos[id];
+                if (p.x < minX) minX = p.x;
+                if (p.x > maxX) maxX = p.x;
+                if (p.y < minY) minY = p.y;
+                if (p.y > maxY) maxY = p.y;
+              }
+              const pad = 120; // room for the node boxes + labels around the edge
+              const vw = visContainer.clientWidth || 600;
+              const vh = visContainer.clientHeight || 500;
+              const scale = Math.max(0.15, Math.min(1.4,
+                vw / ((maxX - minX) + pad * 2),
+                vh / ((maxY - minY) + pad * 2)
+              ));
+              network.moveTo({
+                position: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+                scale: scale,
+                animation: withAnim ? fitAnim : false
+              });
+            } catch (e) {}
+          };
+
+          // The hierarchical layout is already stable; once it's placed we turn
+          // physics OFF so nothing drifts on hover/drag, and centre it in frame.
           const freezeLayout = () => {
             try {
-              network.storePositions();               // bake settled x/y into the data
               network.setOptions({ physics: { enabled: false } });
-              network.redraw();
+              centreAndFit(true);
             } catch (e) {}
           };
 
           if (!animate) {
             network = new visGlobal.Network(visContainer, { nodes: allNodes, edges: allEdges }, options);
             visContainer._visNetwork = network;
-            try {
-              network.once && network.once('stabilizationIterationsDone', freezeLayout);
-            } catch (e) {}
-            setTimeout(freezeLayout, 1200);
-            setTimeout(() => { try { network.redraw(); } catch (e) {} }, 150);
+            try { network.once && network.once('stabilizationIterationsDone', freezeLayout); } catch (e) {}
+            setTimeout(freezeLayout, 1400);
             return;
           }
 
-          // Animated reveal: the tree crystallises outward from the root, one
-          // BFS generation at a time.
-          //   - the root is PINNED at the origin and never moves
-          //   - each new generation is fanned out on an arc around its parent
-          //     (pointing away from the grandparent), so children never spawn
-          //     on top of each other
-          //   - a generation stays free for two waves before it is pinned, and
-          //     `avoidOverlap` is on hard, so nodes push apart before locking
-          //   - a final settle frees everything except the root and lets the
-          //     overlap forces resolve, then the layout is frozen
-          //   - the camera stays centred on the root and only ever zooms OUT
+          // Animated reveal: the hierarchical tree grows one generation at a
+          // time from the root. The layout engine reflows the rows as each
+          // generation lands (no overlap, ever) and the camera zooms out to
+          // keep the whole lineage in frame.
           const animatedOptions = Object.assign({}, options, {
-            physics: {
-              enabled: true,
-              barnesHut: {
-                gravitationalConstant: -4500,
-                centralGravity: 0.04,
-                springLength: 170,
-                springConstant: 0.03,
-                avoidOverlap: 1,        // hard — keep node boxes from overlapping
-                damping: 0.6
-              },
-              maxVelocity: 10,
-              minVelocity: 0.6,
-              timestep: 0.3,
-              stabilization: false
-            }
+            physics: Object.assign({}, options.physics, { stabilization: false })
           });
           const nodesDS = new DataSet([]);
           const edgesDS = new DataSet([]);
           network = new visGlobal.Network(visContainer, { nodes: nodesDS, edges: edgesDS }, animatedOptions);
           visContainer._visNetwork = network;
 
-          const fitAnim = { duration: 650, easingFunction: 'easeInOutQuad' };
-          const SEED_RADIUS = 170; // where a child is placed relative to its parent
-
-          // Keep the root (at 0,0) dead centre and zoom out just enough to hold
-          // every node currently on screen. Never zooms past 1:1.
-          const frameOnRoot = () => {
-            try {
-              const pos = network.getPositions();
-              let maxX = 1, maxY = 1;
-              for (const id in pos) {
-                maxX = Math.max(maxX, Math.abs(pos[id].x));
-                maxY = Math.max(maxY, Math.abs(pos[id].y));
-              }
-              const pad = 160; // room for node boxes + labels
-              const w = visContainer.clientWidth || 600;
-              const h = visContainer.clientHeight || 500;
-              const scale = Math.max(0.2, Math.min(1, (w / 2) / (maxX + pad), (h / 2) / (maxY + pad)));
-              network.moveTo({ position: { x: 0, y: 0 }, scale: scale, animation: fitAnim });
-            } catch (e) {}
-          };
-
-          // Pin the given nodes at their current position so physics leaves them alone.
-          const pinNodes = (ids) => {
-            if (!ids || !ids.length) return;
-            let pos = {};
-            try { pos = network.getPositions(ids); } catch (e) { pos = {}; }
-            nodesDS.update(ids.map((id) => {
-              const p = pos[id];
-              const upd = { id: id, fixed: { x: true, y: true } };
-              if (p) { upd.x = p.x; upd.y = p.y; }
-              return upd;
-            }));
-          };
-
           const waves = computeRevealWaves(allNodes, allEdges);
-          const rootIds = new Set(waves[0] ? waves[0].nodeIds : []);
-          const parentOfAll = new Map(allEdges.map((e) => [e.to, e.from]));
           const waveMs = Math.max(32, opts.waveMs || 800);
-          const endSettleMs = Math.max(120, Math.min(1200, Math.round(waveMs * 1.2)));
-
-          // Lay this wave's new nodes out on an arc around each parent, aimed
-          // away from the grandparent so branches spread instead of stacking.
-          const seedWaveNodes = (w, positions) => {
-            const byParent = new Map();
-            for (const id of w.nodeIds) {
-              const pid = parentOfAll.has(id) ? parentOfAll.get(id) : null;
-              if (!byParent.has(pid)) byParent.set(pid, []);
-              byParent.get(pid).push(id);
-            }
-
-            const out = [];
-            byParent.forEach((kids, pid) => {
-              const pp = pid != null ? positions[pid] : null;
-
-              if (!pp) {
-                // root generation — pin at the origin (or fan a forest around it)
-                kids.forEach((id, i) => {
-                  const node = Object.assign({}, nodeById.get(id));
-                  if (kids.length === 1) { node.x = 0; node.y = 0; }
-                  else {
-                    const a = (i / kids.length) * Math.PI * 2;
-                    node.x = Math.cos(a) * SEED_RADIUS;
-                    node.y = Math.sin(a) * SEED_RADIUS;
-                  }
-                  node.fixed = { x: true, y: true };
-                  out.push(node);
-                });
-                return;
-              }
-
-              const gp = positions[parentOfAll.get(pid)];
-              const baseAngle = gp
-                ? Math.atan2(pp.y - gp.y, pp.x - gp.x)   // straight outward
-                : Math.PI / 2;                            // first branch: fan downward
-              const spread = Math.min(Math.PI * 0.9, 0.4 + kids.length * 0.4);
-
-              kids.forEach((id, i) => {
-                const t = kids.length === 1 ? 0 : (i / (kids.length - 1)) - 0.5;
-                const a = baseAngle + t * spread;
-                const node = Object.assign({}, nodeById.get(id));
-                node.x = pp.x + Math.cos(a) * SEED_RADIUS + (Math.random() * 12 - 6);
-                node.y = pp.y + Math.sin(a) * SEED_RADIUS + (Math.random() * 12 - 6);
-                node.fixed = false;
-                out.push(node);
-              });
-            });
-            return out;
-          };
+          const endSettleMs = Math.max(150, Math.min(1200, Math.round(waveMs * 1.4)));
 
           let wi = 0;
           const revealNextWave = () => {
             if (wi >= waves.length) {
-              setTimeout(() => {
-                // Free everything except the root and let `avoidOverlap` resolve
-                // any remaining collisions, then re-frame and freeze.
-                try {
-                  const ids = nodesDS.getIds();
-                  nodesDS.update(ids.map((id) => ({
-                    id: id, fixed: rootIds.has(id) ? { x: true, y: true } : false
-                  })));
-                } catch (e) {}
-                setTimeout(() => {
-                  frameOnRoot();
-                  setTimeout(() => {
-                    try {
-                      const ids = nodesDS.getIds();
-                      nodesDS.update(ids.map((id) => ({ id: id, fixed: false })));
-                    } catch (e) {}
-                    freezeLayout();
-                  }, endSettleMs);
-                }, endSettleMs);
-              }, waveMs);
+              setTimeout(() => { centreAndFit(true); setTimeout(freezeLayout, endSettleMs); }, endSettleMs);
               return;
             }
             const w = waves[wi++];
             try {
-              // Pin the generation two levels up: it has had two full waves to
-              // spread, so locking it now won't trap any overlaps.
-              if (wi - 3 >= 1) pinNodes(waves[wi - 3].nodeIds);
-
-              let positions = {};
-              try { positions = network.getPositions ? network.getPositions() : {}; } catch (e) { positions = {}; }
-
-              nodesDS.add(seedWaveNodes(w, positions));
+              nodesDS.add(w.nodeIds.map((id) => nodeById.get(id)).filter(Boolean));
               edgesDS.add(w.edges);
-              // Re-frame once physics has had a moment to place the new leaves.
-              setTimeout(frameOnRoot, Math.min(waveMs * 0.6, 350));
+              // Re-centre a beat later, once the row has been laid out.
+              setTimeout(() => centreAndFit(true), Math.min(waveMs * 0.5, 300));
             } catch (e) {}
             setTimeout(revealNextWave, waveMs);
           };
