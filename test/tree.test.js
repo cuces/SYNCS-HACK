@@ -350,8 +350,8 @@ async function treeRendererTests() {
         document.body.appendChild(container);
 
         enhanceGraph(container, { waveMs: 40 }); // fast waves for the test
-        // 3 waves * 40ms + per-wave refit + endSettle (~400ms) + margin
-        await new Promise((r) => setTimeout(r, 1200));
+        // 3 waves * 40ms + per-wave refit + two-stage end settle + margin
+        await new Promise((r) => setTimeout(r, 1400));
 
         const firstDS = nodeDataSets[0];
         const nodesRevealed = firstDS ? firstDS.get().length : 0;

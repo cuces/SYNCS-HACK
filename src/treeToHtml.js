@@ -331,21 +331,23 @@
           // Animated reveal: the tree crystallises outward from the root, one
           // BFS generation at a time.
           //   - the root is PINNED at the origin and never moves
-          //   - before a node's children appear, that node is PINNED where it
-          //     currently sits, so the already-grown part of the tree stops
-          //     moving and only the new leaves push out
-          //   - physics is gentle (weak forces, heavy damping, capped velocity)
-          //   - the camera stays centred on the root and only ever zooms OUT,
-          //     so the whole lineage keeps to frame as it grows
+          //   - each new generation is fanned out on an arc around its parent
+          //     (pointing away from the grandparent), so children never spawn
+          //     on top of each other
+          //   - a generation stays free for two waves before it is pinned, and
+          //     `avoidOverlap` is on hard, so nodes push apart before locking
+          //   - a final settle frees everything except the root and lets the
+          //     overlap forces resolve, then the layout is frozen
+          //   - the camera stays centred on the root and only ever zooms OUT
           const animatedOptions = Object.assign({}, options, {
             physics: {
               enabled: true,
               barnesHut: {
-                gravitationalConstant: -3000,
-                centralGravity: 0.05,
-                springLength: 150,
+                gravitationalConstant: -4500,
+                centralGravity: 0.04,
+                springLength: 170,
                 springConstant: 0.03,
-                avoidOverlap: 0.3,
+                avoidOverlap: 1,        // hard — keep node boxes from overlapping
                 damping: 0.6
               },
               maxVelocity: 10,
@@ -360,6 +362,7 @@
           visContainer._visNetwork = network;
 
           const fitAnim = { duration: 650, easingFunction: 'easeInOutQuad' };
+          const SEED_RADIUS = 170; // where a child is placed relative to its parent
 
           // Keep the root (at 0,0) dead centre and zoom out just enough to hold
           // every node currently on screen. Never zooms past 1:1.
@@ -371,7 +374,7 @@
                 maxX = Math.max(maxX, Math.abs(pos[id].x));
                 maxY = Math.max(maxY, Math.abs(pos[id].y));
               }
-              const pad = 140; // room for node boxes + labels
+              const pad = 160; // room for node boxes + labels
               const w = visContainer.clientWidth || 600;
               const h = visContainer.clientHeight || 500;
               const scale = Math.max(0.2, Math.min(1, (w / 2) / (maxX + pad), (h / 2) / (maxY + pad)));
@@ -381,7 +384,7 @@
 
           // Pin the given nodes at their current position so physics leaves them alone.
           const pinNodes = (ids) => {
-            if (!ids.length) return;
+            if (!ids || !ids.length) return;
             let pos = {};
             try { pos = network.getPositions(ids); } catch (e) { pos = {}; }
             nodesDS.update(ids.map((id) => {
@@ -393,52 +396,95 @@
           };
 
           const waves = computeRevealWaves(allNodes, allEdges);
+          const rootIds = new Set(waves[0] ? waves[0].nodeIds : []);
+          const parentOfAll = new Map(allEdges.map((e) => [e.to, e.from]));
           const waveMs = Math.max(32, opts.waveMs || 800);
-          const endSettleMs = Math.max(400, Math.min(900, waveMs));
+          const endSettleMs = Math.max(120, Math.min(1200, Math.round(waveMs * 1.2)));
+
+          // Lay this wave's new nodes out on an arc around each parent, aimed
+          // away from the grandparent so branches spread instead of stacking.
+          const seedWaveNodes = (w, positions) => {
+            const byParent = new Map();
+            for (const id of w.nodeIds) {
+              const pid = parentOfAll.has(id) ? parentOfAll.get(id) : null;
+              if (!byParent.has(pid)) byParent.set(pid, []);
+              byParent.get(pid).push(id);
+            }
+
+            const out = [];
+            byParent.forEach((kids, pid) => {
+              const pp = pid != null ? positions[pid] : null;
+
+              if (!pp) {
+                // root generation — pin at the origin (or fan a forest around it)
+                kids.forEach((id, i) => {
+                  const node = Object.assign({}, nodeById.get(id));
+                  if (kids.length === 1) { node.x = 0; node.y = 0; }
+                  else {
+                    const a = (i / kids.length) * Math.PI * 2;
+                    node.x = Math.cos(a) * SEED_RADIUS;
+                    node.y = Math.sin(a) * SEED_RADIUS;
+                  }
+                  node.fixed = { x: true, y: true };
+                  out.push(node);
+                });
+                return;
+              }
+
+              const gp = positions[parentOfAll.get(pid)];
+              const baseAngle = gp
+                ? Math.atan2(pp.y - gp.y, pp.x - gp.x)   // straight outward
+                : Math.PI / 2;                            // first branch: fan downward
+              const spread = Math.min(Math.PI * 0.9, 0.4 + kids.length * 0.4);
+
+              kids.forEach((id, i) => {
+                const t = kids.length === 1 ? 0 : (i / (kids.length - 1)) - 0.5;
+                const a = baseAngle + t * spread;
+                const node = Object.assign({}, nodeById.get(id));
+                node.x = pp.x + Math.cos(a) * SEED_RADIUS + (Math.random() * 12 - 6);
+                node.y = pp.y + Math.sin(a) * SEED_RADIUS + (Math.random() * 12 - 6);
+                node.fixed = false;
+                out.push(node);
+              });
+            });
+            return out;
+          };
+
           let wi = 0;
           const revealNextWave = () => {
             if (wi >= waves.length) {
               setTimeout(() => {
-                frameOnRoot();
+                // Free everything except the root and let `avoidOverlap` resolve
+                // any remaining collisions, then re-frame and freeze.
+                try {
+                  const ids = nodesDS.getIds();
+                  nodesDS.update(ids.map((id) => ({
+                    id: id, fixed: rootIds.has(id) ? { x: true, y: true } : false
+                  })));
+                } catch (e) {}
                 setTimeout(() => {
-                  // Release every pin so the user can still rearrange nodes,
-                  // then kill physics for good.
-                  try {
-                    const ids = nodesDS.getIds();
-                    nodesDS.update(ids.map((id) => ({ id: id, fixed: false })));
-                  } catch (e) {}
-                  freezeLayout();
+                  frameOnRoot();
+                  setTimeout(() => {
+                    try {
+                      const ids = nodesDS.getIds();
+                      nodesDS.update(ids.map((id) => ({ id: id, fixed: false })));
+                    } catch (e) {}
+                    freezeLayout();
+                  }, endSettleMs);
                 }, endSettleMs);
               }, waveMs);
               return;
             }
             const w = waves[wi++];
             try {
-              const parentOf = new Map(w.edges.map((e) => [e.to, e.from]));
-
-              // Pin this generation's parents in place before their children grow.
-              pinNodes([...new Set(w.edges.map((e) => e.from))]);
+              // Pin the generation two levels up: it has had two full waves to
+              // spread, so locking it now won't trap any overlaps.
+              if (wi - 3 >= 1) pinNodes(waves[wi - 3].nodeIds);
 
               let positions = {};
               try { positions = network.getPositions ? network.getPositions() : {}; } catch (e) { positions = {}; }
-              const newNodes = w.nodeIds.map((id) => {
-                const node = Object.assign({}, nodeById.get(id));
-                const parentId = parentOf.get(id);
-                const p = parentId != null ? positions[parentId] : null;
-                if (p) {
-                  // seed the child right next to its (now fixed) parent, free to move
-                  node.x = p.x + (Math.random() * 40 - 20);
-                  node.y = p.y + (Math.random() * 40 - 20);
-                  node.fixed = false;
-                } else {
-                  // no parent = the root: pin it at the origin for the whole animation
-                  node.x = 0;
-                  node.y = 0;
-                  node.fixed = { x: true, y: true };
-                }
-                return node;
-              }).filter((n) => n && n.id != null);
-              nodesDS.add(newNodes);
+
+              nodesDS.add(seedWaveNodes(w, positions));
               edgesDS.add(w.edges);
               // Re-frame once physics has had a moment to place the new leaves.
               setTimeout(frameOnRoot, Math.min(waveMs * 0.6, 350));

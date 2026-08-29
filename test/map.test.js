@@ -526,6 +526,150 @@ async function scenarioTests() {
   });
 }
 
+// ---------- Standalone: tiny 2-entry lineages (unrelated to the big scenario) ----------
+//
+// A memory and one adaptation of it — the smallest lineage there is. These are
+// the shape of the "flatbread" and "ragù" pairs in the demo seed.
+
+async function standaloneTests() {
+  const ids = (t) => t.nodes.map((n) => n.post_id);
+
+  // original + one adaptation, both on the map, in different countries
+  const pair = () => ({
+    nodes: [
+      { post_id: 1, title: "Nonna's ragù",   country: 'Italy',     tags: ['italian', 'ragu'],                 lat: 44.4949, lng: 11.3426 },
+      { post_id: 2, title: 'Slow-cooker ragù', country: 'Australia', tags: ['australian', 'ragu', 'slow-cooker'], lat: -37.8136, lng: 144.9631 }
+    ],
+    edges: [{ from: 1, to: 2 }]
+  });
+
+  await test('standalone pair: both located → 2 markers joined by 1 line', async () => {
+    const map = freshTestMap();
+    const r = plotTreeOnMap(map, pair());
+    return {
+      input: { nodes: 2, edges: 1 },
+      expected: { markers: 2, lines: 1, skipped: 0 },
+      actual: { markers: r.markers, lines: r.lines, skipped: r.skipped }
+    };
+  });
+
+  await test('standalone pair: filter by the original\'s country keeps just the original', async () => {
+    const out = filterTree(pair(), { country: 'Italy' });
+    return {
+      input: { filter: { country: 'Italy' } },
+      expected: { nodeIds: [1], edges: [] },
+      actual: { nodeIds: ids(out), edges: out.edges }
+    };
+  });
+
+  await test('standalone pair: a tag only the adaptation carries keeps just the adaptation', async () => {
+    const out = filterTree(pair(), { tags: ['slow-cooker'] });
+    return {
+      input: { filter: { tags: ['slow-cooker'] } },
+      expected: { nodeIds: [2] },
+      actual: { nodeIds: ids(out) }
+    };
+  });
+
+  await test('standalone pair: the shared tag keeps both, connected', async () => {
+    const out = filterTree(pair(), { tags: ['ragu'] });
+    return {
+      input: { filter: { tags: ['ragu'] } },
+      expected: { nodeIds: [1, 2], edges: [{ from: 1, to: 2 }] },
+      actual: { nodeIds: ids(out), edges: out.edges }
+    };
+  });
+
+  await test('standalone pair: dropdowns list exactly the 2 countries and their tags', async () => {
+    const t = pair();
+    return {
+      input: {},
+      expected: {
+        countries: ['Australia', 'Italy'],
+        tags: ['australian', 'italian', 'ragu', 'slow-cooker']
+      },
+      actual: { countries: distinctCountries(t), tags: distinctTags(t) }
+    };
+  });
+
+  await test('standalone pair: adaptation has no location → 1 marker, no line', async () => {
+    const tree = {
+      nodes: [
+        { post_id: 1, title: 'Original',   country: 'Italy', tags: ['x'], lat: 44.49, lng: 11.34 },
+        { post_id: 2, title: 'Adaptation', country: null,    tags: ['y'], lat: null,  lng: null }
+      ],
+      edges: [{ from: 1, to: 2 }]
+    };
+    const map = freshTestMap();
+    const r = plotTreeOnMap(map, tree);
+    return {
+      input: { note: 'child never got a location' },
+      expected: { markers: 1, lines: 0, skipped: 1 },
+      actual: { markers: r.markers, lines: r.lines, skipped: r.skipped }
+    };
+  });
+
+  await test('standalone pair: original has no location → 1 marker, no line', async () => {
+    const tree = {
+      nodes: [
+        { post_id: 1, title: 'Original',   country: null,        tags: ['x'], lat: null,     lng: null },
+        { post_id: 2, title: 'Adaptation', country: 'Australia', tags: ['y'], lat: -37.81, lng: 144.96 }
+      ],
+      edges: [{ from: 1, to: 2 }]
+    };
+    const map = freshTestMap();
+    const r = plotTreeOnMap(map, tree);
+    return {
+      input: { note: 'root never got a location' },
+      expected: { markers: 1, lines: 0, skipped: 1 },
+      actual: { markers: r.markers, lines: r.lines, skipped: r.skipped }
+    };
+  });
+
+  await test('standalone pair: computeRevealWaves reveals it in exactly two steps', async () => {
+    const waves = computeRevealWaves(
+      [{ id: 1 }, { id: 2 }],
+      [{ from: 1, to: 2 }]
+    );
+    return {
+      input: {},
+      expected: { waveNodeIds: [[1], [2]] },
+      actual: { waveNodeIds: waves.map((w) => w.nodeIds) }
+    };
+  });
+
+  await test('standalone pair via the DB: create original + adaptation, walk it from the child', async () => {
+    const familyId = await createFamily('Rossi');
+    const originalId = await createPost({
+      poster_id: 1, family_id: familyId, title: "Nonna's ragù", description: '', file: null,
+      category: 'recipe', tags: ['italian', 'ragu'], is_published: true,
+      country: 'Italy', lat: 44.4949, lng: 11.3426
+    });
+    const adaptationId = await createPost({
+      poster_id: 1, family_id: familyId, title: 'Slow-cooker ragù', description: '', file: null,
+      category: 'recipe', tags: ['australian', 'ragu', 'slow-cooker'], is_published: true,
+      adapted_from: originalId,
+      country: 'Australia', lat: -37.8136, lng: 144.9631
+    });
+
+    const tree = await getFullTree(adaptationId); // start from the child
+    const map = freshTestMap();
+    const r = plotTreeOnMap(map, tree);
+
+    return {
+      input: { startedFrom: 'Slow-cooker ragù (the adaptation)' },
+      expected: { nodes: 2, edges: 1, rootTitle: "Nonna's ragù", markers: 2, lines: 1 },
+      actual: {
+        nodes: tree.nodes.length,
+        edges: tree.edges.length,
+        rootTitle: tree.nodes[0] ? tree.nodes[0].title : null,
+        markers: r.markers,
+        lines: r.lines
+      }
+    };
+  });
+}
+
 // ---------- Run ----------
 
 (async function run() {
@@ -533,5 +677,6 @@ async function scenarioTests() {
   await mapViewTests();
   await filterTests();
   await scenarioTests();
+  await standaloneTests();
   renderReport();
 })();

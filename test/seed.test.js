@@ -7,7 +7,7 @@
 async function seedTests() {
 
   // ---- DATA shape (no database) ----
-  await test('showcase DATA describes one well-formed lineage', async () => {
+  await test('showcase DATA describes three well-formed lineages', async () => {
     const D = window.showcaseSeed.DATA;
     const keys = D.posts.map(p => p.key);
     const roots = D.posts.filter(p => p.from === null);
@@ -17,9 +17,10 @@ async function seedTests() {
     return {
       input: { postCount: D.posts.length, userCount: D.users.length },
       expected: {
-        posts: 7, users: 3, roots: 1,
+        posts: 11, users: 3,
+        roots: 3,               // dumplings + flatbread + ragù
         uniqueKeys: true, danglingParents: 0,
-        published: 6, private: 1
+        published: 10, private: 1
       },
       actual: {
         posts: D.posts.length,
@@ -33,7 +34,7 @@ async function seedTests() {
     };
   });
 
-  // ---- reseed() writes the whole tree ----
+  // ---- reseed() writes every lineage ----
   await test('reseed() populates families, users and posts', async () => {
     await window.showcaseSeed.clear();
     const { rootPostId } = await window.showcaseSeed.reseed();
@@ -45,11 +46,38 @@ async function seedTests() {
 
     return {
       input: {},
-      expected: { families: 1, users: 3, posts: 7, published: 6, rootTitle: "Popo's Lunar New Year Jiaozi" },
+      expected: { families: 1, users: 3, posts: 11, published: 10, rootTitle: "Popo's Lunar New Year Jiaozi" },
       actual: {
         families, users, posts,
         published: published.length,
         rootTitle: root ? root.title : null
+      }
+    };
+  });
+
+  // ---- the standalone pairs are their own 2-node trees ----
+  await test('reseed() keeps the standalone pairs separate from the dumpling tree', async () => {
+    await window.showcaseSeed.clear();
+    await window.showcaseSeed.reseed();
+
+    const flatOg = await db.posts.filter(p => p.title.indexOf('Saj Flatbread') !== -1).first();
+    const raguNew = await db.posts.filter(p => p.title === 'Slow-Cooker Ragù').first();
+    const flatTree = await getFullTree(flatOg.post_id);
+    const raguTree = await getFullTree(raguNew.post_id); // start from the child
+
+    return {
+      input: {},
+      expected: {
+        flatbreadNodes: 2, flatbreadEdges: 1,
+        raguNodes: 2, raguEdges: 1,
+        raguRootTitle: "Nonna Rosa's Sunday Ragù"
+      },
+      actual: {
+        flatbreadNodes: flatTree.nodes.length,
+        flatbreadEdges: flatTree.edges.length,
+        raguNodes: raguTree.nodes.length,
+        raguEdges: raguTree.edges.length,
+        raguRootTitle: raguTree.nodes[0] ? raguTree.nodes[0].title : null
       }
     };
   });
@@ -85,19 +113,20 @@ async function seedTests() {
     };
   });
 
-  // ---- locations: 5 mappable, 2 not ----
-  await test('reseed() sets coordinates on 5 posts and countries on 6', async () => {
+  // ---- locations: most mappable, a couple not ----
+  await test('reseed() sets coordinates on 9 posts and countries on 10', async () => {
     await window.showcaseSeed.clear();
     await window.showcaseSeed.reseed();
     const posts = await db.posts.toArray();
 
     return {
       input: {},
-      expected: { withCoords: 5, withCountry: 6, chinaPosts: 3 },
+      expected: { withCoords: 9, withCountry: 10, chinaPosts: 3, australiaPosts: 2 },
       actual: {
         withCoords: posts.filter(p => p.lat != null && p.lng != null).length,
         withCountry: posts.filter(p => p.country).length,
-        chinaPosts: posts.filter(p => p.country === 'China').length
+        chinaPosts: posts.filter(p => p.country === 'China').length,
+        australiaPosts: posts.filter(p => p.country === 'Australia').length
       }
     };
   });
@@ -117,7 +146,7 @@ async function seedTests() {
 
     return {
       input: {},
-      expected: { seededWhenEmpty: true, countAfterEmpty: 7, seededWhenPopulated: false, countAfterPopulated: 7 },
+      expected: { seededWhenEmpty: true, countAfterEmpty: 11, seededWhenPopulated: false, countAfterPopulated: 11 },
       actual: {
         seededWhenEmpty: onEmpty.seeded,
         countAfterEmpty,

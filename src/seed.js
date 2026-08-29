@@ -1,14 +1,18 @@
 // seed.js — demo showcase data.
 //
-// Loads one rich, cross-border recipe lineage into the archive so every page
-// has something real to show during the demo:
-//   - Family board  : all 7 memories of The Chen Family (one is private)
-//   - Community      : the 6 published ones, across 4 cultures
-//   - Post detail    : full descriptions + the lineage graph / map embedded below
-//   - Map & graph    : China (x3 cities), South Korea, Poland as markers; Nepal
-//                      has a country but no pin yet; the freezer note has neither
+// Loads three recipe lineages into the archive so every page has something
+// real to show during the demo:
+//   - the Chen family dumpling tree (7 memories, one private) — the same tree
+//     the filter scenarios in test/map.test.js exercise
+//   - two small standalone pairs (flatbread, ragù) so the community graph has
+//     more than one tree
 //
-// This is the same tree the filter scenarios in test/map.test.js exercise.
+//   - Family board  : all 11 memories of The Chen Family
+//   - Community      : the 10 published ones, across ~7 cultures
+//   - Post detail    : full descriptions + the lineage graph / map embedded below
+//   - Map & graph    : China (x3 cities), South Korea, Poland, Lebanon, Italy,
+//                      Australia (x2) as markers; Nepal has a country but no pin
+//                      yet; the freezer note has neither
 //
 // Idempotent: ensure() seeds only when the archive is empty. reseed() forces a
 // fresh copy; clear() wipes everything.
@@ -99,6 +103,45 @@
           'From a tin-roof momo stall in Thamel: the mandu fold, steamed, with a ' +
           'fierce tomato-and-timur achar on the side. Still need to pin the exact ' +
           'stall on the map.'
+      },
+
+      // --- Two small standalone lineages, unrelated to the dumplings. They
+      //     give the community graph more than one tree to show. ---
+      {
+        key: 'flatbread-og', from: null, by: 0, published: true, category: 'recipe',
+        country: 'Lebanon', lat: 33.8938, lng: 35.5018, // Beirut
+        tags: ['lebanese', 'bread', 'flatbread'],
+        title: "Teta's Saj Flatbread",
+        description:
+          "My partner's grandmother bakes these paper-thin on a domed saj over a " +
+          'gas ring, slapping the dough between her hands until it is almost see-through.'
+      },
+      {
+        key: 'flatbread-bbq', from: 'flatbread-og', by: 0, published: true, category: 'recipe',
+        country: 'Australia', lat: -33.8688, lng: 151.2093, // Sydney
+        tags: ['australian', 'bread', 'flatbread', 'weeknight'],
+        title: 'Weeknight Flatbread on the BBQ',
+        description:
+          "No saj, no problem — the same dough puffs beautifully straight on the " +
+          'barbecue flat plate. Thirty seconds a side, brushed with za’atar oil.'
+      },
+      {
+        key: 'ragu-og', from: null, by: 1, published: true, category: 'recipe',
+        country: 'Italy', lat: 44.4949, lng: 11.3426, // Bologna
+        tags: ['italian', 'pasta', 'ragu'],
+        title: "Nonna Rosa's Sunday Ragù",
+        description:
+          'A neighbour in our old building gave us this: soffritto cooked down for ' +
+          'an hour, milk before the tomato, and it simmers from breakfast until lunch.'
+      },
+      {
+        key: 'ragu-slowcooker', from: 'ragu-og', by: 0, published: true, category: 'recipe',
+        country: 'Australia', lat: -37.8136, lng: 144.9631, // Melbourne
+        tags: ['australian', 'pasta', 'ragu', 'slow-cooker'],
+        title: 'Slow-Cooker Ragù',
+        description:
+          'Same order of operations as Nonna Rosa, but everything goes into the ' +
+          'slow cooker before work and is ready by the time we are home.'
       }
     ]
   };
