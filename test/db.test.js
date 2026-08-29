@@ -41,17 +41,19 @@ function deepEqual(a, b) {
 // Each `fn` returns { input, expected, actual }.
 async function test(name, fn) {
   await resetDb();
-  let input, expected, actual, error = null, pass = false;
+  let input, expected, actual, error = null, pass = false, graphic;
   try {
     const r = await fn();
     input = r.input;
     expected = r.expected;
     actual = r.actual;
+    // optional graphic payload produced by tests that render visuals
+    graphic = r.graphic;
     pass = deepEqual(expected, actual);
   } catch (err) {
     error = err && err.message ? err.message : String(err);
   }
-  _results.push({ name, input, expected, actual, error, pass });
+  _results.push({ name, input, expected, actual, graphic, error, pass });
   console.log(`${pass ? 'PASS' : 'FAIL'} — ${name}`, { input, expected, actual, error });
 }
 
@@ -82,16 +84,27 @@ function renderReport() {
       const tag = document.createElement('span');
       tag.className = 'label';
       tag.textContent = label;
-      const pre = document.createElement('pre');
-      pre.textContent = value;
       wrap.appendChild(tag);
-      wrap.appendChild(pre);
+
+      // Render graphics as HTML so visual outputs appear in the report.
+      if (label === 'graphic' && typeof value === 'string') {
+        const container = document.createElement('div');
+        container.className = 'graphic';
+        container.innerHTML = value;
+        wrap.appendChild(container);
+      } else {
+        const pre = document.createElement('pre');
+        pre.textContent = value;
+        wrap.appendChild(pre);
+      }
+
       li.appendChild(wrap);
     };
 
     addBlock('input', fmt(r.input));
     addBlock('expected', fmt(r.expected));
     addBlock('actual', r.error ? `(threw) ${r.error}` : fmt(r.actual));
+    if (r.graphic !== undefined) addBlock('graphic', r.graphic);
 
     list.appendChild(li);
   }
@@ -349,11 +362,13 @@ async function fullTreeTests() {
     const t = await buildTree();
     const input = { tree: t, query: `getFullTree(${t.root})` };
 
-    const { nodes } = await getFullTree(t.root);
+    const result = await getFullTree(t.root);
+    const html = (typeof renderTreeAsHtml === 'function') ? renderTreeAsHtml(result) : null;
     return {
       input,
       expected: { count: 4, ids: [t.root, t.childA, t.childB, t.grandchild].sort((a, b) => a - b) },
-      actual: { count: nodes.length, ids: nodes.map(n => n.post_id).sort((a, b) => a - b) }
+      actual: { count: result.nodes.length, ids: result.nodes.map(n => n.post_id).sort((a, b) => a - b) },
+      graphic: html
     };
   });
 
@@ -361,12 +376,14 @@ async function fullTreeTests() {
     const t = await buildTree();
     const input = { tree: t, query: `getFullTree(${t.grandchild})  // deepest leaf` };
 
-    const { nodes } = await getFullTree(t.grandchild);
-    const ids = nodes.map(n => n.post_id).sort((a, b) => a - b);
+    const result = await getFullTree(t.grandchild);
+    const ids = result.nodes.map(n => n.post_id).sort((a, b) => a - b);
+    const html = (typeof renderTreeAsHtml === 'function') ? renderTreeAsHtml(result) : null;
     return {
       input,
       expected: { count: 4, includesSiblingBranch: true, ids: [t.root, t.childA, t.childB, t.grandchild].sort((a, b) => a - b) },
-      actual: { count: nodes.length, includesSiblingBranch: ids.includes(t.childB), ids }
+      actual: { count: result.nodes.length, includesSiblingBranch: ids.includes(t.childB), ids },
+      graphic: html
     };
   });
 
@@ -374,15 +391,18 @@ async function fullTreeTests() {
     const t = await buildTree();
     const input = { tree: t, query: `getFullTree(${t.childB})` };
 
-    const { edges } = await getFullTree(t.childB);
+    const result = await getFullTree(t.childB);
+    const edges = result.edges;
     const norm = edges.map(e => `${e.from}->${e.to}`).sort();
+    const html = (typeof renderTreeAsHtml === 'function') ? renderTreeAsHtml(result) : null;
     return {
       input,
       expected: {
         count: 3,
         edges: [`${t.root}->${t.childA}`, `${t.root}->${t.childB}`, `${t.childA}->${t.grandchild}`].sort()
       },
-      actual: { count: edges.length, edges: norm }
+      actual: { count: edges.length, edges: norm },
+      graphic: html
     };
   });
 
@@ -391,21 +411,25 @@ async function fullTreeTests() {
     const lone = await createPost({ poster_id: 1, family_id: familyId, title: 'Lone', description: '', file: null, category: 'recipe' });
     const input = { post: { id: lone }, query: `getFullTree(${lone})` };
 
-    const { nodes, edges } = await getFullTree(lone);
+    const result = await getFullTree(lone);
+    const html = (typeof renderTreeAsHtml === 'function') ? renderTreeAsHtml(result) : null;
     return {
       input,
       expected: { nodeCount: 1, nodeId: lone, edgeCount: 0 },
-      actual: { nodeCount: nodes.length, nodeId: nodes[0] ? nodes[0].post_id : null, edgeCount: edges.length }
+      actual: { nodeCount: result.nodes.length, nodeId: result.nodes[0] ? result.nodes[0].post_id : null, edgeCount: result.edges.length },
+      graphic: html
     };
   });
 
   await test('getFullTree on a missing post id returns empty nodes and edges', async () => {
     const input = { post_id: 999999, query: 'getFullTree(999999)' };
-    const { nodes, edges } = await getFullTree(999999);
+    const result = await getFullTree(999999);
+    const html = (typeof renderTreeAsHtml === 'function') ? renderTreeAsHtml(result) : null;
     return {
       input,
       expected: { nodeCount: 0, edgeCount: 0 },
-      actual: { nodeCount: nodes.length, edgeCount: edges.length }
+      actual: { nodeCount: result.nodes.length, edgeCount: result.edges.length },
+      graphic: html
     };
   });
 }

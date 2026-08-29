@@ -26,7 +26,8 @@ async function treeRendererTests() {
     return {
       input,
       expected: { containsRoot: true, liCount: 4 },
-      actual: { containsRoot: html.includes('root'), liCount }
+      actual: { containsRoot: html.includes('root'), liCount },
+      graphic: html
     };
   });
 
@@ -36,7 +37,8 @@ async function treeRendererTests() {
     return {
       input,
       expected: { isEmpty: true },
-      actual: { isEmpty: !html.includes('<li') }
+      actual: { isEmpty: !html.includes('<li') },
+      graphic: html
     };
   });
 }
