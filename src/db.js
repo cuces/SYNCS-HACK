@@ -49,6 +49,12 @@ async function getUserById(user_id) {
   return db.users.get(user_id);
 }
 
+// Returns every user record. Used by the community board, which shows posts
+// from many families at once.
+async function getAllUsers() {
+  return db.users.toArray();
+}
+
 // ---------- Posts ----------
 
 // Creates a new post for a family board or community feed.

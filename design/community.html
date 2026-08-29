@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOTED — Community Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #29241F;
+  --sidebar: #221D18;
+  --sidebar-text: #C7BFAF;
+  --sidebar-text-active: #F7F3EA;
+  --paper: #F5F0E6;
+  --surface: #FFFFFF;
+  --cream: #EFE7D8;
+  --cream-2: #E9E0CE;
+  --tan: #CBB89A;
+  --clay: #A67C52;
+  --brown: #6D5B45;
+  --forest: #557C5E;
+  --forest-dark: #44614C;
+  --pale-forest: #E4EAE1;
+  --border: #E4DDCC;
+  --muted: #6F6656;
+  --meta: #948A78;
+
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; }
+button { font-family: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--forest); outline-offset: 2px; }
+ul, ol { margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+
+/* ===== Shell ===== */
+.app-shell { display: flex; min-height: 100vh; }
+
+.app-sidebar {
+  width: 200px; flex-shrink: 0; background: var(--sidebar); color: var(--sidebar-text);
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 22px 14px; position: sticky; top: 0; height: 100vh;
+}
+.sidebar-logo {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-display); font-size: 21px; font-weight: 600;
+  letter-spacing: 0.5px; color: var(--sidebar-text-active); padding: 6px 10px 26px 10px;
+}
+.sidebar-logo svg { width: 15px; height: 15px; color: var(--tan); flex-shrink: 0; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 3px; }
+.sidebar-nav a {
+  display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 9px;
+  color: var(--sidebar-text); font-size: 14px; font-weight: 500;
+}
+.sidebar-nav a svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-nav a:hover { color: var(--sidebar-text-active); background: rgba(247,243,234,0.06); }
+.sidebar-nav a[aria-current="page"] { color: var(--sidebar-text-active); background: rgba(247,243,234,0.1); }
+
+.app-main { flex: 1; min-width: 0; }
+.app-content { padding: 40px 44px 72px 44px; }
+
+/* ===== Header row ===== */
+.archive-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+}
+.archive-header h1 {
+  font-family: var(--font-display); font-size: 30px; font-weight: 600; color: var(--ink); margin: 0 0 6px 0;
+}
+.archive-header p { font-size: 14px; color: var(--muted); margin: 0; }
+
+.header-search {
+  display: flex; align-items: center; width: 260px; height: 42px;
+  background: var(--cream); border: 1px solid var(--border); border-radius: 21px; padding: 0 16px;
+  flex-shrink: 0; margin-top: 2px;
+}
+.header-search svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+.header-search input {
+  border: none; background: transparent; outline: none;
+  font-family: var(--font-body); font-size: 13.5px; color: var(--ink); margin-left: 9px; width: 100%;
+}
+.header-search input::placeholder { color: var(--meta); }
+
+/* ===== Culture chips ===== */
+.culture-nav { margin-top: 26px; }
+.culture-list { display: flex; flex-wrap: wrap; gap: 9px; list-style: none; margin: 0; padding: 0; position: relative; }
+.culture-chip {
+  height: 40px; padding: 0 20px; border-radius: 20px; border: none;
+  background: var(--cream-2); color: var(--ink); font-family: var(--font-body); font-size: 14px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.culture-chip:hover { background: var(--tan); color: #F7F3EA; }
+.culture-chip[aria-pressed="true"] { background: var(--forest); color: #F7F3EA; }
+.culture-chip.more-chip { background: transparent; color: var(--muted); position: relative; }
+.culture-chip.more-chip svg { width: 14px; height: 14px; }
+.more-dropdown {
+  position: absolute; top: 46px; left: 0; z-index: 6;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(41,36,31,0.14); padding: 6px; min-width: 160px; display: none;
+}
+.more-dropdown.open { display: block; }
+.more-dropdown button {
+  display: block; width: 100%; text-align: left; background: none; border: none;
+  padding: 9px 12px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: var(--ink);
+}
+.more-dropdown button:hover { background: var(--cream); }
+
+/* ===== Layout ===== */
+.archive-layout { margin-top: 30px; display: flex; align-items: flex-start; gap: 36px; }
+
+.category-sidebar { width: 168px; flex-shrink: 0; }
+.category-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.category-item {
+  width: 100%; height: 40px; padding: 0 12px; border-radius: 10px; border: none; background: transparent;
+  color: var(--ink); font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; text-align: left;
+}
+.category-item svg { width: 17px; height: 17px; color: var(--muted); flex-shrink: 0; }
+.category-item:hover { background: var(--cream); }
+.category-item[aria-current="true"] { background: var(--forest); color: #F7F3EA; }
+.category-item[aria-current="true"] svg { color: #F7F3EA; }
+
+.archive-content { flex: 1; min-width: 0; }
+
+.section-title-row h2 {
+  font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--ink); margin: 0;
+  display: inline-block; position: relative;
+}
+.section-underline { display: block; width: 92px; height: 8px; margin-top: 2px; }
+.section-title-row p.meta { font-size: 12px; color: var(--meta); margin: 8px 0 0 0; }
+
+/* ===== Featured memory ===== */
+.featured-memory {
+  margin-top: 20px; width: 100%; height: 232px; border-radius: 16px;
+  border: 1px solid var(--border); background: var(--surface); display: flex; overflow: hidden;
+}
+.featured-memory .featured-image { width: 380px; height: 232px; flex-shrink: 0; object-fit: cover; }
+.featured-memory .featured-body { padding: 26px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.featured-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--clay); margin: 0 0 8px 0; }
+.featured-body h3 { font-family: var(--font-display); font-size: 24px; font-weight: 600; color: var(--ink); margin: 0 0 6px 0; }
+.featured-tags { font-size: 12px; color: var(--meta); margin: 0 0 12px 0; }
+.featured-body p.excerpt { font-size: 14px; line-height: 21px; color: var(--muted); margin: 0 0 14px 0; max-width: 460px; }
+.featured-link { font-size: 13px; font-weight: 600; color: var(--forest); display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; }
+.featured-link svg { width: 14px; height: 14px; }
+
+/* ===== Post grid (flat card style) ===== */
+.post-grid { margin-top: 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.archive-card { display: block; }
+.archive-image-wrap { border-radius: 14px; overflow: hidden; }
+.archive-image { width: 100%; height: 170px; object-fit: cover; }
+.archive-caption { padding: 12px 2px 0 2px; }
+.archive-caption h3 {
+  font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--ink); margin: 0 0 3px 0;
+}
+.archive-caption .caption-row { display: flex; align-items: center; justify-content: space-between; }
+.archive-caption .by { font-size: 12.5px; color: var(--muted); margin: 0; }
+.type-icon {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--cream-2);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.type-icon svg { width: 13px; height: 13px; color: var(--clay); }
+
+.empty-state {
+  margin-top: 26px; padding: 56px 24px; text-align: center;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+}
+.empty-state h3 { font-family: var(--font-display); font-size: 19px; color: var(--ink); margin: 0 0 6px 0; }
+.empty-state p { font-size: 14px; color: var(--muted); margin: 0; }
+
+/* ===== Load more ===== */
+.load-more-row { margin-top: 32px; text-align: center; }
+.load-more-btn {
+  height: 44px; padding: 0 24px; border-radius: 22px;
+  background: var(--cream); border: 1px solid var(--border); color: var(--ink);
+  font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;
+}
+.load-more-btn:hover { border-color: var(--clay); }
+.load-more-btn svg { width: 15px; height: 15px; }
+
+@media (max-width: 1150px) {
+  .app-sidebar { display: none; }
+  .post-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 900px) {
+  .archive-layout { flex-direction: column; }
+  .category-sidebar { width: 100%; }
+  .category-list { flex-direction: row; flex-wrap: wrap; }
+  .featured-memory { flex-direction: column; height: auto; }
+  .featured-memory .featured-image { width: 100%; height: 180px; }
+}
+@media (max-width: 800px) {
+  .post-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .app-content { padding: 28px 20px 56px 20px; }
+  .header-search { width: 100%; }
+  .culture-list { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .culture-chip { flex-shrink: 0; }
+}
+@media (max-width: 550px) {
+  .post-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="app-sidebar">
+    <div>
+      <div class="sidebar-logo">
+        ROOTED
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V13"/><path d="M12 13c0-4 3-6 7-6-1 4-3 6-7 6Z"/><path d="M12 13c0-3-2.5-5-6-5 .8 3 2.5 5 6 5Z"/></svg>
+      </div>
+      <nav class="sidebar-nav" aria-label="Primary">
+        <a href="home.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+          Home
+        </a>
+        <a href="family.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><circle cx="18" cy="8" r="2.4"/><path d="M16 21c0-2.8 1.6-4.8 4-5.6"/></svg>
+          My Family
+        </a>
+        <a href="family.html#add">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Memory
+        </a>
+        <a href="community.html" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3Z"/></svg>
+          Community
+        </a>
+        <a href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4.5 8-11.2V5l-8-3-8 3v5.8C4 17.5 12 22 12 22Z"/></svg>
+          Saved
+        </a>
+      </nav>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+        Settings
+      </a>
+    </nav>
+  </aside>
+
+  <div class="app-main">
+    <main class="app-content">
+
+      <div class="archive-header">
+        <div>
+          <h1>Community Archive</h1>
+          <p>Explore and learn from families around the world.</p>
+        </div>
+        <div class="header-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="search" id="search-input" placeholder="Search the archive..." aria-label="Search the archive">
+        </div>
+      </div>
+
+      <nav class="culture-nav" aria-label="Filter by culture">
+        <ul class="culture-list" id="culture-list"></ul>
+      </nav>
+
+      <div class="archive-layout">
+
+        <aside class="category-sidebar" aria-label="Filter by category">
+          <ul class="category-list" id="category-list"></ul>
+        </aside>
+
+        <section class="archive-content">
+
+          <div class="section-title-row">
+            <h2 id="section-title">All Contributions</h2>
+            <svg class="section-underline" viewBox="0 0 92 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M1 5.5C15 2 30 1 45 3.5C60 6 75 4.5 91 2" stroke="#CBB89A" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <p class="meta" id="section-meta"></p>
+          </div>
+
+          <article class="featured-memory" id="featured-memory"></article>
+
+          <section class="post-grid" id="post-grid" aria-label="Archive posts"></section>
+
+          <div class="empty-state" id="empty-state" hidden>
+            <h3>Nothing here yet</h3>
+            <p>Try a different culture, category, or search term.</p>
+          </div>
+
+          <div class="load-more-row" id="load-more-row" hidden>
+            <button class="load-more-btn" type="button" id="load-more-btn">
+              Load more
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+          </div>
+
+        </section>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+(function () {
+
+  const CULTURES = ["All", "Korean", "Chinese", "Vietnamese", "Greek", "Indian", "Filipino", "Lebanese"];
+  const MORE_CULTURES = ["Japanese", "Mexican", "Ethiopian", "Polish"];
+
+  const CATEGORY_ICONS = {
+    All: '<line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="20" x2="14" y2="20"/>',
+    Recipes: '<path d="M6 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3"/><path d="M8 12v9"/><path d="M17 3c-1.5 1.5-2 3-2 5s.5 3 2 4v9"/>',
+    Stories: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>',
+    Traditions: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    Memories: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/>',
+    Music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+    "Family History": '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>'
+  };
+  const CATEGORIES = [
+    { key: "All", label: "All" },
+    { key: "Recipes", label: "Recipes" },
+    { key: "Stories", label: "Stories" },
+    { key: "Traditions", label: "Traditions" },
+    { key: "Memories", label: "Memories" },
+    { key: "Music", label: "Music" },
+    { key: "Family History", label: "History" }
+  ];
+
+  const POSTS = [
+    { id: "grandmas-dumplings", title: "Lola's Adobo", type: "Recipe", culture: "Filipino", category: "Recipes",
+      desc: "A recipe carried from Ilocos, simmered every Sunday for three generations.",
+      contributor: "by The Danganan Family", image: "https://images.unsplash.com/photo-1598515213692-5f252f04f1af?w=900&q=80", featured: true, linkable: true },
+    { id: "soy-sauce-chicken", title: "Soy Sauce Chicken", type: "Recipe", culture: "Chinese", category: "Recipes",
+      desc: "Slow-braised in a fragrant master stock that gets better with every use.",
+      contributor: "by The Wong Family", image: "https://images.unsplash.com/photo-1546430782-93a04b6cf1a1?w=900&q=80" },
+    { id: "grandmas-radish-cake", title: "Radish Cake", type: "Recipe", culture: "Chinese", category: "Recipes",
+      desc: "Pan-fried squares of daikon and rice flour, a staple of the New Year table.",
+      contributor: "by Lin Family", image: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=900&q=80" },
+    { id: "sweet-red-bean-soup", title: "Sweet Red Bean Soup", type: "Recipe", culture: "Chinese", category: "Recipes",
+      desc: "A warm, simple dessert my mother made whenever someone needed comforting.",
+      contributor: "by Chen Family", image: "https://images.unsplash.com/photo-1582576163090-09751c04d05c?w=900&q=80" },
+    { id: "grandfathers-childhood-story", title: "My Grandfather's Childhood Story", type: "Story", culture: "Korean", category: "Stories",
+      desc: "A story of growing up in post-war Busan, told to us every summer by the sea.",
+      contributor: "by The Park Family", image: "https://images.unsplash.com/photo-1517154421773-0529f29ea451?w=900&q=80" },
+    { id: "bayanihan-spirit", title: "The Bayanihan Spirit", type: "Tradition", culture: "Filipino", category: "Traditions",
+      desc: "When a neighbour moves house, the whole barangay still shows up to carry it together.",
+      contributor: "by The Danganan Family", image: "https://images.unsplash.com/photo-1521302200778-33500795e128?w=900&q=80" },
+    { id: "song-my-mother-taught-me", title: "The Song My Mother Taught Me", type: "Music", culture: "Greek", category: "Music",
+      desc: "A lullaby carried from a village in Crete to three different countries.",
+      contributor: "by a Greek-Australian family", image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=900&q=80" },
+    { id: "how-we-celebrate-easter", title: "How We Celebrate Easter", type: "Tradition", culture: "Greek", category: "Traditions",
+      desc: "Midnight candles, cracked red eggs, and a lamb turning slowly on the spit.",
+      contributor: "by The Papadakis Family", image: "https://images.unsplash.com/photo-1521302200778-33500795e128?w=900&q=80" },
+    { id: "dolma-from-beirut", title: "Dolma from Beirut", type: "Recipe", culture: "Lebanese", category: "Recipes",
+      desc: "Vine leaves rolled tight by hand, a recipe my aunt still won't fully share.",
+      contributor: "by The Haddad Family", image: "https://images.unsplash.com/photo-1615719413546-198b25453f85?w=900&q=80" },
+    { id: "mothers-wedding-sari", title: "My Mother's Wedding Sari", type: "Memory", culture: "Indian", category: "Memories",
+      desc: "A silk sari, folded away for thirty years, unwrapped again for my own wedding.",
+      contributor: "by The Nair Family", image: "https://images.unsplash.com/photo-1610189844777-97f7ea3ba0c3?w=900&q=80" },
+    { id: "fish-sauce-my-father-made", title: "The Fish Sauce My Father Made", type: "Recipe", culture: "Vietnamese", category: "Recipes",
+      desc: "Fermented for months on the back porch, a smell that means home.",
+      contributor: "by The Nguyen Family", image: "https://images.unsplash.com/photo-1617196034183-421b4917c92d?w=900&q=80" },
+    { id: "adobo-sunday", title: "Adobo Sunday", type: "Recipe", culture: "Filipino", category: "Recipes",
+      desc: "The dish that means the whole family is finally in one kitchen again.",
+      contributor: "by The Santos Family", image: "https://images.unsplash.com/photo-1625944230945-1b7dd3b949ab?w=900&q=80" },
+    { id: "diwali-lights", title: "Diwali Lights at Grandma's House", type: "Tradition", culture: "Indian", category: "Traditions",
+      desc: "Rows of diyas along the veranda, lit the same way for forty years.",
+      contributor: "by The Nair Family", image: "https://images.unsplash.com/photo-1604423043492-b9c1e8f6c7e6?w=900&q=80" },
+    { id: "letters-from-the-war", title: "Letters from the War", type: "Family History", culture: "Korean", category: "Family History",
+      desc: "A bundle of letters between my great-grandparents, found in an old chest.",
+      contributor: "by The Park Family", image: "https://images.unsplash.com/photo-1518281420975-50db6e5d0a97?w=900&q=80" },
+    { id: "the-recipe-box", title: "The Recipe Box", type: "Memory", culture: "Filipino", category: "Memories",
+      desc: "Index cards in my mother's handwriting, stained with forty years of cooking.",
+      contributor: "by The Santos Family", image: "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=900&q=80" },
+    { id: "banh-chung-for-tet", title: "Bánh Chưng for Tết", type: "Tradition", culture: "Vietnamese", category: "Traditions",
+      desc: "Square rice cakes wrapped in banana leaf, boiled overnight by the whole family.",
+      contributor: "by The Nguyen Family", image: "https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=900&q=80" }
+  ];
+
+  const PAGE_SIZE = 8;
+  const state = { culture: "All", category: "All", query: "", visible: PAGE_SIZE };
+
+  const cultureListEl = document.getElementById("culture-list");
+  const categoryListEl = document.getElementById("category-list");
+  const featuredEl = document.getElementById("featured-memory");
+  const gridEl = document.getElementById("post-grid");
+  const emptyEl = document.getElementById("empty-state");
+  const sectionTitleEl = document.getElementById("section-title");
+  const sectionMetaEl = document.getElementById("section-meta");
+  const searchInput = document.getElementById("search-input");
+  const loadMoreRow = document.getElementById("load-more-row");
+  const loadMoreBtn = document.getElementById("load-more-btn");
+
+  function iconSvg(key) {
+    const path = CATEGORY_ICONS[key];
+    if (!path) return "";
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + path + '</svg>';
+  }
+
+  function renderCultureList() {
+    cultureListEl.innerHTML = "";
+    CULTURES.forEach(function (culture) {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.className = "culture-chip";
+      btn.type = "button";
+      btn.textContent = culture;
+      btn.setAttribute("aria-pressed", String(state.culture === culture));
+      btn.addEventListener("click", function () {
+        state.culture = culture; state.visible = PAGE_SIZE;
+        renderCultureList(); renderAll();
+      });
+      li.appendChild(btn);
+      cultureListEl.appendChild(li);
+    });
+
+    const moreLi = document.createElement("li");
+    moreLi.style.position = "relative";
+    const moreBtn = document.createElement("button");
+    moreBtn.className = "culture-chip more-chip";
+    moreBtn.type = "button";
+    moreBtn.innerHTML = 'More <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    const dropdown = document.createElement("div");
+    dropdown.className = "more-dropdown";
+    MORE_CULTURES.forEach(function (c) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = c;
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        state.culture = c; state.visible = PAGE_SIZE;
+        dropdown.classList.remove("open");
+        renderCultureList(); renderAll();
+      });
+      dropdown.appendChild(b);
+    });
+    moreBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      dropdown.classList.toggle("open");
+    });
+    moreLi.appendChild(moreBtn);
+    moreLi.appendChild(dropdown);
+    cultureListEl.appendChild(moreLi);
+  }
+  document.addEventListener("click", function () {
+    document.querySelectorAll(".more-dropdown.open").forEach(function (d) { d.classList.remove("open"); });
+  });
+
+  function renderCategoryList() {
+    categoryListEl.innerHTML = "";
+    CATEGORIES.forEach(function (cat) {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.className = "category-item";
+      btn.type = "button";
+      btn.setAttribute("aria-current", String(state.category === cat.key));
+      btn.innerHTML = iconSvg(cat.key) + "<span>" + cat.label + "</span>";
+      btn.addEventListener("click", function () {
+        state.category = cat.key; state.visible = PAGE_SIZE;
+        renderCategoryList(); renderAll();
+      });
+      li.appendChild(btn);
+      categoryListEl.appendChild(li);
+    });
+  }
+
+  function matchesFilters(post) {
+    const cultureOk = state.culture === "All" || post.culture === state.culture;
+    const categoryOk = state.category === "All" || post.category === state.category;
+    let queryOk = true;
+    if (state.query.trim().length > 0) {
+      const q = state.query.trim().toLowerCase();
+      queryOk = [post.title, post.desc, post.culture, post.category].join(" ").toLowerCase().includes(q);
+    }
+    return cultureOk && categoryOk && queryOk;
+  }
+
+  function sectionTitleFor() {
+    if (state.query.trim().length > 0) return 'Results for "' + state.query.trim() + '"';
+    const hasCulture = state.culture !== "All", hasCategory = state.category !== "All";
+    if (hasCulture && hasCategory) return state.category + " from " + state.culture + " families";
+    if (hasCulture) return "Contributions from " + state.culture + " families";
+    if (hasCategory) return state.category;
+    return "All Contributions";
+  }
+
+  function renderFeatured(posts) {
+    const featured = posts.find(function (p) { return p.featured; });
+    if (!featured) { featuredEl.hidden = true; featuredEl.innerHTML = ""; return; }
+    featuredEl.hidden = false;
+    featuredEl.innerHTML =
+      '<img class="featured-image" src="' + featured.image + '" alt="' + featured.title + '">' +
+      '<div class="featured-body">' +
+        '<p class="featured-eyebrow">Featured Memory</p>' +
+        '<h3>' + featured.title + '</h3>' +
+        '<p class="featured-tags">' + featured.culture + ' &middot; ' + featured.type + '</p>' +
+        '<p class="excerpt">' + featured.desc + '</p>' +
+        '<a class="featured-link" href="' + (featured.linkable ? "post.html" : "#") + '">Read the full story ' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>' +
+        '</a>' +
+      '</div>';
+  }
+
+  function renderGrid(posts) {
+    const rest = posts.filter(function (p) { return !p.featured; });
+    const shown = rest.slice(0, state.visible);
+    gridEl.innerHTML = "";
+    emptyEl.hidden = posts.length !== 0;
+
+    shown.forEach(function (post) {
+      const card = document.createElement("a");
+      card.className = "archive-card";
+      card.href = post.linkable ? "post.html" : "#";
+      card.innerHTML =
+        '<div class="archive-image-wrap"><img class="archive-image" src="' + post.image + '" alt="' + post.title + '"></div>' +
+        '<div class="archive-caption">' +
+          '<h3>' + post.title + '</h3>' +
+          '<div class="caption-row">' +
+            '<p class="by">' + post.contributor + '</p>' +
+            '<span class="type-icon">' + iconSvg(post.category === "Family History" ? "Family History" : post.category) + '</span>' +
+          '</div>' +
+        '</div>';
+      gridEl.appendChild(card);
+    });
+
+    loadMoreRow.hidden = rest.length <= state.visible;
+  }
+
+  function renderAll() {
+    const filtered = POSTS.filter(matchesFilters);
+    sectionTitleEl.textContent = sectionTitleFor();
+    const cultureLabel = state.culture === "All" ? "All cultures" : state.culture;
+    const categoryLabel = state.category === "All" ? "All categories" : state.category;
+    sectionMetaEl.textContent = cultureLabel + " \u00b7 " + categoryLabel + " \u00b7 " + filtered.length + " contribution" + (filtered.length === 1 ? "" : "s");
+
+    const showFeatured = state.query.trim().length === 0 && filtered.some(function (p) { return p.featured; });
+    renderFeatured(showFeatured ? filtered : []);
+    renderGrid(filtered);
+  }
+
+  searchInput.addEventListener("input", function (e) {
+    state.query = e.target.value; state.visible = PAGE_SIZE;
+    renderAll();
+  });
+
+  loadMoreBtn.addEventListener("click", function () {
+    state.visible += PAGE_SIZE;
+    renderAll();
+  });
+
+  renderCultureList();
+  renderCategoryList();
+  renderAll();
+
+})();
+</script>
+</body>
+</html>

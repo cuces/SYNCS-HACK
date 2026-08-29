@@ -177,10 +177,51 @@
     return view;
   }
 
+  /**
+   * Data for the community archive (community.html).
+   * Returns { posts } where each entry is a PostView (see toPostView) extended
+   * with:
+   *   culture:     string | null   // first tag, title-cased (e.g. "Korean")
+   *   contributor: string | null   // "The Wong Family" / author name
+   *   tags:        string[]
+   * Posts are newest first. Only published posts are included.
+   * Throws if the database is unreachable — the caller renders an error state.
+   */
+  async function loadCommunityView() {
+    const [posts, users, families] = await Promise.all([
+      getPublishedPosts(),
+      getAllUsers(),
+      getFamilies()
+    ]);
+
+    const usersById = new Map(users.map(function (u) { return [u.user_id, u]; }));
+    const familiesById = new Map(families.map(function (f) { return [f.family_id, f]; }));
+
+    const list = posts
+      .slice()
+      .sort(byNewest)
+      .map(function (post) {
+        const view = toPostView(post, usersById);
+        const tags = Array.isArray(post.tags) ? post.tags.map(String) : [];
+        const family = familiesById.get(post.family_id);
+        view.tags = tags;
+        view.culture = tags.length
+          ? tags[0].charAt(0).toUpperCase() + tags[0].slice(1)
+          : null;
+        view.contributor = family && family.name
+          ? family.name
+          : (view.authorName || null);
+        return view;
+      });
+
+    return { posts: list };
+  }
+
   global.appData = {
     getCurrentFamily: getCurrentFamily,
     loadHomeView: loadHomeView,
     loadFamilyView: loadFamilyView,
-    loadPostView: loadPostView
+    loadPostView: loadPostView,
+    loadCommunityView: loadCommunityView
   };
 })(window);
