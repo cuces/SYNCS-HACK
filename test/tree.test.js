@@ -182,6 +182,7 @@ async function treeRendererTests() {
         });
         document.body.appendChild(container);
 
+        // No fake vis.DataSet => enhanceGraph takes the non-animated path.
         enhanceGraph(container);
         // let the fake stabilization event fire
         await new Promise((r) => setTimeout(r, 20));
@@ -198,6 +199,116 @@ async function treeRendererTests() {
           input: { fakeVis: true },
           expected: { physicsDisabled: true, physicsReEnabled: false, positionsStored: true },
           actual: { physicsDisabled, physicsReEnabled, positionsStored: storePositionsCalled }
+        };
+      } finally {
+        window.vis = realVis;
+      }
+    });
+
+    // ----- Grow-from-root reveal animation -----
+
+    await test('computeRevealWaves reveals the tree generation by generation from the root', async () => {
+      //        1
+      //       / \
+      //      2   3
+      //      |
+      //      4
+      const nodes = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
+      const edges = [{ from: 1, to: 2 }, { from: 1, to: 3 }, { from: 2, to: 4 }];
+      const waves = computeRevealWaves(nodes, edges);
+      return {
+        input: { nodes: nodes.map((n) => n.id), edges },
+        expected: {
+          waveCount: 3,
+          nodeIdsPerWave: [[1], [2, 3], [4]],
+          edgesPerWave: [0, 2, 1] // root wave has no incoming edges
+        },
+        actual: {
+          waveCount: waves.length,
+          nodeIdsPerWave: waves.map((w) => w.nodeIds),
+          edgesPerWave: waves.map((w) => w.edges.length)
+        }
+      };
+    });
+
+    await test('computeRevealWaves puts disconnected nodes in a trailing wave', async () => {
+      // node 9 has no path from the forced root (1)
+      const waves = computeRevealWaves(
+        [{ id: 1 }, { id: 2 }, { id: 9 }],
+        [{ from: 1, to: 2 }, { from: 2, to: 1 }] // cycle => root falls back to first id
+      );
+      return {
+        input: { note: 'cycle between 1 and 2, plus orphan 9' },
+        expected: { lastWave: [9] },
+        actual: { lastWave: waves[waves.length - 1].nodeIds }
+      };
+    });
+
+    await test('enhanceGraph reveals nodes in waves and freezes physics at the end', async () => {
+      let addCalls = 0;
+      const setOptionsCalls = [];
+      const realVis = window.vis;
+
+      function FakeDataSet(init) {
+        this._items = [];
+        if (init && init.length) this.add(init);
+      }
+      FakeDataSet.prototype.add = function (x) {
+        addCalls++;
+        const arr = Array.isArray(x) ? x : [x];
+        this._items.push.apply(this._items, arr);
+        return arr.map((i) => i && i.id);
+      };
+      FakeDataSet.prototype.get = function () { return this._items.slice(); };
+
+      const nodeDataSets = [];
+      window.vis = {
+        DataSet: function (init) {
+          const ds = new FakeDataSet(init);
+          nodeDataSets.push(ds);
+          return ds;
+        },
+        Network: function (el, data, options) {
+          this.setOptions = (o) => setOptionsCalls.push(o);
+          this.storePositions = () => {};
+          this.redraw = () => {};
+          this.fit = () => {};
+          this.once = () => {};
+        }
+      };
+
+      try {
+        const container = document.createElement('div');
+        container.innerHTML = renderTreeAsHtml({
+          nodes: [
+            { post_id: 1, title: 'root' },
+            { post_id: 2, title: 'a' },
+            { post_id: 3, title: 'b' },
+            { post_id: 4, title: 'c' }
+          ],
+          edges: [{ from: 1, to: 2 }, { from: 1, to: 3 }, { from: 2, to: 4 }]
+        });
+        document.body.appendChild(container);
+
+        enhanceGraph(container, { waveMs: 20 }); // fast waves for the test
+        await new Promise((r) => setTimeout(r, 500)); // 150ms + 3 waves*20ms + freeze delay
+
+        const firstDS = nodeDataSets[0];
+        const nodesRevealed = firstDS ? firstDS.get().length : 0;
+        const physicsFrozen = setOptionsCalls.some(
+          (o) => o && o.physics && o.physics.enabled === false
+        );
+
+        container.remove();
+        return {
+          input: { waveMs: 20, tree: '1 -> (2,3), 2 -> 4' },
+          // 3 node-add calls + 3 edge-add calls = at least 4 (non-animated would be 2)
+          expected: { allNodesRevealed: 4, revealedInMultipleBatches: true, physicsFrozen: true },
+          actual: {
+            allNodesRevealed: nodesRevealed,
+            revealedInMultipleBatches: addCalls >= 4,
+            physicsFrozen
+          }
         };
       } finally {
         window.vis = realVis;

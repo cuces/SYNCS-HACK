@@ -163,13 +163,69 @@
     }
   }
 
+  // Breaks a tree (vis-format nodes `{id}` + edges `{from,to}`) into the
+  // "generations" to reveal one after another when animating the graph:
+  //   waves[0] = the root(s)
+  //   waves[n] = every node whose parent first appeared in waves[n-1]
+  // Each wave also carries the edges that connect its nodes to the previous one.
+  // Disconnected nodes (if any) come last, in a single trailing wave.
+  function computeRevealWaves(nodes, edges) {
+    const list = Array.isArray(nodes) ? nodes : [];
+    const es = Array.isArray(edges) ? edges : [];
+    const ids = list.map((n) => n.id);
+    const idSet = new Set(ids);
+
+    const childEdges = new Map(); // parentId -> [{from,to}, ...]
+    const hasParent = new Set();
+    for (const e of es) {
+      if (!idSet.has(e.from) || !idSet.has(e.to)) continue;
+      if (!childEdges.has(e.from)) childEdges.set(e.from, []);
+      childEdges.get(e.from).push({ from: e.from, to: e.to });
+      hasParent.add(e.to);
+    }
+
+    let roots = ids.filter((id) => !hasParent.has(id));
+    if (!roots.length && ids.length) roots = [ids[0]];
+
+    const waves = [{ nodeIds: roots.slice(), edges: [] }];
+    const seen = new Set(roots);
+    let frontier = roots.slice();
+    while (frontier.length) {
+      const nextIds = [];
+      const waveEdges = [];
+      for (const pid of frontier) {
+        for (const e of childEdges.get(pid) || []) {
+          if (seen.has(e.to)) continue;
+          seen.add(e.to);
+          nextIds.push(e.to);
+          waveEdges.push(e);
+        }
+      }
+      if (!nextIds.length) break;
+      waves.push({ nodeIds: nextIds, edges: waveEdges });
+      frontier = nextIds;
+    }
+
+    const unreached = ids.filter((id) => !seen.has(id));
+    if (unreached.length) waves.push({ nodeIds: unreached, edges: [] });
+    return waves;
+  }
+
   // Expose both helpers
   global.renderTreeAsHtml = renderTreeAsHtml;
   global.renderTreeAsGraph = renderTreeAsGraph;
+  global.computeRevealWaves = computeRevealWaves;
 
   // Enhance a rendered graph. If vis-network is loaded, initialize it using
   // the embedded JSON data. Otherwise fall back to the SVG line drawer.
-  global.enhanceGraph = function enhanceGraph(container) {
+  //
+  // opts:
+  //   animate  — set false to skip the grow-from-root reveal (default true;
+  //              also skipped when the user prefers reduced motion, or when
+  //              vis has no DataSet, or there's only one node)
+  //   waveMs   — ms between each generation appearing (default 650)
+  global.enhanceGraph = function enhanceGraph(container, opts) {
+    opts = opts || {};
     try {
       if (!container) return;
       const dataScript = container.querySelector('.pt-vis-data');
@@ -223,17 +279,27 @@
           }
         };
         try {
-          // pass plain arrays for nodes/edges (vis accepts arrays or DataSet)
-          const network = new visGlobal.Network(visContainer, { nodes: data.nodes || [], edges: data.edges || [] }, options);
-          visContainer._visNetwork = network;
           // hide the card canvas when vis is active
           const canvas = container.querySelector('.pt-canvas');
           if (canvas) canvas.style.display = 'none';
           visContainer.style.display = 'block';
-          // Physics is only used to lay the tree out once. As soon as it has
-          // settled we turn it OFF completely — otherwise the force-directed
-          // layout keeps drifting and rotating (it has no fixed orientation),
-          // and any hover/drag/redraw nudges it again.
+
+          const allNodes = data.nodes || [];
+          const allEdges = (data.edges || []).map((e) => ({ from: e.from, to: e.to }));
+          const nodeById = new Map(allNodes.map((n) => [n.id, n]));
+
+          const DataSet = visGlobal.DataSet;
+          const reduceMotion = (() => {
+            try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+            catch (e) { return false; }
+          })();
+          const animate = !!DataSet && opts.animate !== false && !reduceMotion && allNodes.length > 1;
+
+          // Physics is only used to lay the tree out. Once it settles we turn it
+          // OFF completely — otherwise the force-directed layout keeps drifting
+          // and rotating (it has no fixed orientation) and every hover/drag
+          // nudges it again.
+          let network;
           const freezeLayout = () => {
             try {
               network.storePositions();               // bake settled x/y into the data
@@ -241,12 +307,50 @@
               network.redraw();
             } catch (e) {}
           };
-          try {
-            network.once && network.once('stabilizationIterationsDone', freezeLayout);
-          } catch (e) {}
-          // Fallback in case the stabilization event never fires.
-          setTimeout(freezeLayout, 1200);
-          setTimeout(() => { try { network.redraw(); } catch (e) {} }, 150);
+
+          if (!animate) {
+            network = new visGlobal.Network(visContainer, { nodes: allNodes, edges: allEdges }, options);
+            visContainer._visNetwork = network;
+            try {
+              network.once && network.once('stabilizationIterationsDone', freezeLayout);
+            } catch (e) {}
+            setTimeout(freezeLayout, 1200);
+            setTimeout(() => { try { network.redraw(); } catch (e) {} }, 150);
+            return;
+          }
+
+          // Animated reveal: the tree grows outward from the root, one BFS
+          // generation at a time, so the viewer watches the lineage connect up.
+          // Turn OFF the up-front stabilization for this network so each newly
+          // added node visibly springs out and settles in real time (that live
+          // physics IS the growth effect); we still freeze everything at the end.
+          const animatedOptions = Object.assign({}, options, {
+            physics: Object.assign({}, options.physics, { stabilization: false })
+          });
+          const nodesDS = new DataSet([]);
+          const edgesDS = new DataSet([]);
+          network = new visGlobal.Network(visContainer, { nodes: nodesDS, edges: edgesDS }, animatedOptions);
+          visContainer._visNetwork = network;
+
+          const waves = computeRevealWaves(allNodes, allEdges);
+          const waveMs = Math.max(16, opts.waveMs || 650);
+          let wi = 0;
+          const revealNextWave = () => {
+            if (wi >= waves.length) {
+              // Let the final additions settle, then lock the layout for good.
+              setTimeout(freezeLayout, Math.min(1600, waveMs * 2));
+              return;
+            }
+            const w = waves[wi++];
+            try {
+              nodesDS.add(w.nodeIds.map((id) => nodeById.get(id)).filter(Boolean));
+              edgesDS.add(w.edges);
+              // Ease the camera out to keep the whole growing tree in view.
+              network.fit({ animation: { duration: Math.round(waveMs * 0.8), easingFunction: 'easeInOutQuad' } });
+            } catch (e) {}
+            setTimeout(revealNextWave, waveMs);
+          };
+          setTimeout(revealNextWave, 150); // a beat before the root appears
           return;
         } catch (e) {
           console.warn('vis.Network init failed, falling back to card canvas', e);
