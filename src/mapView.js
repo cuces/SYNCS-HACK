@@ -13,11 +13,11 @@
 // Returns a new { nodes, edges } keeping only the nodes that match every
 // provided filter:
 //   - country: keep posts whose `country` equals this exactly
-//   - tags:    array of tags — keep posts whose `tags` include AT LEAST ONE of
-//              them (OR within the tag facet). `tag` (a single string) is also
+//   - tags:    array of tags — keep posts whose `tags` include EVERY one of
+//              them (AND within the tag facet). `tag` (a single string) is also
 //              accepted as shorthand for `tags: [tag]`.
 // An empty / missing value for a facet means "don't filter on it".
-// The country and tag facets combine with AND.
+// The country and tag facets also combine with AND.
 // An edge survives only if BOTH of its endpoints survived.
 function filterTree(tree, filters) {
   const f = filters || {};
@@ -28,7 +28,7 @@ function filterTree(tree, filters) {
     if (country && p.country !== country) return false;
     if (tags.length) {
       const postTags = Array.isArray(p.tags) ? p.tags : [];
-      if (!tags.some(t => postTags.includes(t))) return false;
+      if (!tags.every(t => postTags.includes(t))) return false;
     }
     return true;
   });

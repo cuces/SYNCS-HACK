@@ -131,7 +131,7 @@
   <button id="toggle-view-btn">Show map view</button>
 
   <!-- Two filters for the map dots: one country (single), many tags (multi).
-       Country AND tags; multiple tags match posts carrying ANY of them. -->
+       A dot shows only if it matches the country AND carries EVERY selected tag. -->
   <div id="map-filters">
     <label class="filter-group">Country
       <select id="filter-country"><option value="">All</option></select>
@@ -186,7 +186,8 @@
     const tagChips = document.getElementById("filter-tags");
     const clearFiltersBtn = document.getElementById("filter-clear");
 
-    // Currently pressed tags, as a Set — the map shows dots matching ANY of them.
+    // Currently pressed tags, as a Set — the map shows only dots that carry
+    // EVERY one of them (AND).
     const selectedTags = new Set();
 
     // Rebuild the country <select> and the tag chip row from whatever countries
@@ -240,7 +241,7 @@
 
       const parts = [];
       if (filters.country) parts.push(`country = ${filters.country}`);
-      if (filters.tags.length) parts.push(`tags = ${filters.tags.join(" / ")}`);
+      if (filters.tags.length) parts.push(`tags = ${filters.tags.join(" + ")}`);
       statusEl.textContent =
         `Filter: ${parts.length ? parts.join(", ") : "no filter"}\n` +
         `Plotted: ${result.markers} markers, ${result.lines} lines.\n` +

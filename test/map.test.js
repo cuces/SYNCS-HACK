@@ -251,14 +251,25 @@ async function filterTests() {
     };
   });
 
-  await test('filterTree with multiple tags keeps posts matching ANY of them (OR)', async () => {
+  await test('filterTree with multiple tags keeps only posts carrying EVERY one (AND)', async () => {
     const tree = demoTree();
-    const input = { filter: { tags: ['soup', 'stew'] } };
+    const input = { filter: { tags: ['vietnamese', 'soup'] } }; // only post 1 has both
     const out = filterTree(tree, input.filter);
     return {
       input,
-      expected: { nodeIds: [1, 2, 3], edges: [{ from: 1, to: 2 }, { from: 2, to: 3 }] },
+      expected: { nodeIds: [1], edges: [] },
       actual: { nodeIds: out.nodes.map(n => n.post_id), edges: out.edges }
+    };
+  });
+
+  await test('filterTree with a tag combination no post satisfies returns nothing', async () => {
+    const tree = demoTree();
+    const input = { filter: { tags: ['soup', 'stew'] } }; // no post has both
+    const out = filterTree(tree, input.filter);
+    return {
+      input,
+      expected: { nodeIds: [] },
+      actual: { nodeIds: out.nodes.map(n => n.post_id) }
     };
   });
 
@@ -273,25 +284,25 @@ async function filterTests() {
     };
   });
 
-  await test('filterTree combines country AND a multi-tag selection', async () => {
+  await test('filterTree combines country AND a multi-tag (AND) selection', async () => {
     const tree = demoTree();
-    const input = { filter: { country: 'Mexico', tags: ['soup', 'stew'] } };
+    const input = { filter: { country: 'Vietnam', tags: ['vietnamese', 'soup'] } };
     const out = filterTree(tree, input.filter);
     return {
       input,
-      expected: { nodeIds: [2] },
+      expected: { nodeIds: [1] },
       actual: { nodeIds: out.nodes.map(n => n.post_id) }
     };
   });
 
-  await test('multi-tag filter renders every matching marker on the map', async () => {
+  await test('multi-tag (AND) filter renders only the fully-matching markers on the map', async () => {
     const tree = demoTree();
-    const input = { filter: { tags: ['soup', 'stew'] } };
+    const input = { filter: { tags: ['vietnamese', 'soup'] } };
     const map = freshTestMap();
     const result = plotTreeOnMap(map, filterTree(tree, input.filter));
     return {
       input,
-      expected: { markers: 3, lines: 2 },
+      expected: { markers: 1, lines: 0 },
       actual: { markers: result.markers, lines: result.lines }
     };
   });
