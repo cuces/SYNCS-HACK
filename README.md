@@ -15,10 +15,8 @@ python3 -m http.server
 ```
 enter the link
 ```
-http://localhost:8000/
+http://localhost:8000/src/pages/index.html
 ```
-
-then open `src/pages/` and navigate to the desired page (start with `src/pages/index.html`).
 
 ## Project layout
 
