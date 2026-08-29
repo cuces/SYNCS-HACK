@@ -1,10 +1,8 @@
 // post.js — memory detail page controller (post.html?id=<post_id>).
 //
 // Reads one post from the database (via data.js) and fills in the detail card.
-// The card markup mirrors the design mockup in /design/post.html; this file
-// only swaps in real data and wires the visual toggles. Nothing here writes to
-// the database yet — the menu actions and the save / privacy buttons are
-// appearance-only for now.
+// The privacy switch writes `is_published` back to the database (setPostPublished
+// in db.js); the "..." menu actions are still appearance-only for now.
 //
 // Load order: dexie.js -> db.js -> app/ui.js -> app/data.js -> app/post.js
 
@@ -113,13 +111,28 @@
       '<a href="family.html">Back to memories</a>';
   }
 
-  // ----- Visual toggles (appearance only, no persistence yet) --------------
+  // ----- Toggles -----------------------------------------------------------
 
   function setPrivacy(isPublic) {
     var priv = document.getElementById('privacy-private');
     var pub = document.getElementById('privacy-public');
     priv.setAttribute('aria-pressed', String(!isPublic));
     pub.setAttribute('aria-pressed', String(!!isPublic));
+  }
+
+  // Persist the community-visibility choice to the database so it sticks after
+  // you leave the page (and shows up on the family / community boards).
+  async function savePrivacy(isPublic) {
+    var id = Number(postIdFromUrl());
+    if (!id) return;
+    var before = document.getElementById('privacy-public').getAttribute('aria-pressed') === 'true';
+    setPrivacy(isPublic); // optimistic
+    try {
+      await setPostPublished(id, isPublic);
+    } catch (err) {
+      console.error('Could not update visibility:', err);
+      setPrivacy(before); // revert on failure
+    }
   }
 
   function wireToggles() {
@@ -150,12 +163,12 @@
       stepsPreview.style.display = 'none';
     });
 
-    // Privacy switch.
+    // Privacy switch — persisted to the database.
     document.getElementById('privacy-private').addEventListener('click', function () {
-      setPrivacy(false);
+      savePrivacy(false);
     });
     document.getElementById('privacy-public').addEventListener('click', function () {
-      setPrivacy(true);
+      savePrivacy(true);
     });
 
     // "..." menu.

@@ -284,6 +284,31 @@ async function postTests() {
     };
   });
 
+  await test('setPostPublished(id, bool) toggles community visibility both ways', async () => {
+    const familyId = await createFamily('Nguyen');
+    const postId = await createPost({ poster_id: 1, family_id: familyId, title: 'Chai', description: '', file: null, category: 'recipe' });
+    const input = { action: 'setPostPublished(id, true) then setPostPublished(id, false)' };
+
+    await setPostPublished(postId, true);
+    const afterPublish = await getPublishedPosts();
+    const rowAfterPublish = await db.posts.get(postId);
+
+    await setPostPublished(postId, false);
+    const afterUnpublish = await getPublishedPosts();
+    const rowAfterUnpublish = await db.posts.get(postId);
+
+    return {
+      input,
+      expected: { publishedShows: true, storedWhenPublic: 1, publishedHides: true, storedWhenPrivate: 0 },
+      actual: {
+        publishedShows: afterPublish.some(p => p.post_id === postId),
+        storedWhenPublic: rowAfterPublish.is_published,
+        publishedHides: !afterUnpublish.some(p => p.post_id === postId),
+        storedWhenPrivate: rowAfterUnpublish.is_published
+      }
+    };
+  });
+
   await test('getLineage walks adapted_from back to the original', async () => {
     const familyId = await createFamily('Nguyen');
     const gen1 = await createPost({ poster_id: 1, family_id: familyId, title: 'Grandma pho', description: '', file: null, category: 'recipe' });

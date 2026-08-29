@@ -47,6 +47,8 @@
       category: post.category || '',
       // First tag, if any — used as a secondary label (e.g. a culture).
       tag: tags.length ? String(tags[0]) : null,
+      // Every tag on the post, lower-cased. Drives the family board's tag filter.
+      tags: tags.map(function (t) { return String(t).toLowerCase(); }),
       // `file` is a free-form media reference in the schema. Only use it as an
       // <img> source when it is a usable string; otherwise the UI shows a
       // placeholder rather than a broken image.
@@ -134,6 +136,12 @@
       .sort(byNewest)
       .map(function (p) { return toPostView(p, usersById); });
 
+    // Every distinct tag across the board, sorted — powers the "Tags" filter
+    // dropdown. Includes the free-text ones people typed via the custom fields.
+    const tagSet = new Set();
+    postViews.forEach(function (p) { p.tags.forEach(function (t) { if (t) tagSet.add(t); }); });
+    const allTags = Array.from(tagSet).sort();
+
     // No auth yet, so the first member is treated as "you".
     const members = users.map(function (u, i) {
       return {
@@ -148,6 +156,7 @@
       members: members,
       currentUserName: users.length ? users[0].name : null,
       posts: postViews,
+      allTags: allTags,
       stats: {
         members: users.length,
         posts: postViews.length,

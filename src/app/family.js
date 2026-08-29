@@ -1,13 +1,18 @@
 // family.js — "My Family" board controller.
 //
 // Loads the current family, its members and its full board of posts from the
-// database (via data.js) and renders them. The category chips filter the posts
-// that are already on screen; nothing here writes to the database.
+// database (via data.js) and renders them. The category chips and the searchable
+// "Tags" dropdown filter the posts already on screen; nothing here writes to
+// the database.
 
 (function () {
   'use strict';
 
   var esc = ui.escapeHtml;
+
+  // Active filters — the grid shows a card only when it matches BOTH.
+  var activeCategory = 'all';
+  var activeTag = null;
 
   // ----- Rendering -------------------------------------------------------
 
@@ -60,8 +65,10 @@
       '<span>' + esc(ui.dateLabel(post.createdAt)) + '</span>'
     ].join('');
 
+    var tagAttr = esc((post.tags || []).join('|'));
+
     return '' +
-      '<a class="post-card" href="post.html?id=' + encodeURIComponent(post.id) + '&from=family" data-category="' + esc(key) + '">' +
+      '<a class="post-card" href="post.html?id=' + encodeURIComponent(post.id) + '&from=family" data-category="' + esc(key) + '" data-tags="' + tagAttr + '">' +
         '<div class="post-image-wrap">' + media + badge + '</div>' +
         '<div class="post-body">' +
           '<p class="post-type">' + esc(typeLabel(post)) + '</p>' +
@@ -95,22 +102,91 @@
     );
   }
 
-  // ----- Category filter (operates on already-rendered cards) -----------
+  // ----- Filters (operate on already-rendered cards) ------------------------
 
-  function wireFilters() {
-    var chips = Array.prototype.slice.call(document.querySelectorAll('.filter-chip'));
-    var grid = document.getElementById('familyGrid');
+  // Re-apply both the category chip and the tag dropdown to every card.
+  function applyFilters() {
+    var cards = document.querySelectorAll('#familyGrid .post-card');
+    Array.prototype.forEach.call(cards, function (card) {
+      var catOk = activeCategory === 'all' || card.dataset.category === activeCategory;
+      var cardTags = (card.dataset.tags || '').split('|');
+      var tagOk = !activeTag || cardTags.indexOf(activeTag) !== -1;
+      card.hidden = !(catOk && tagOk);
+    });
+  }
 
+  function wireCategoryChips() {
+    var chips = Array.prototype.slice.call(
+      document.querySelectorAll('.filter-chip[data-filter]'));
     chips.forEach(function (chip) {
       chip.addEventListener('click', function () {
         chips.forEach(function (c) { c.setAttribute('aria-pressed', String(c === chip)); });
-        var filter = chip.dataset.filter || 'all';
-        var cards = grid.querySelectorAll('.post-card');
-        Array.prototype.forEach.call(cards, function (card) {
-          var match = filter === 'all' || card.dataset.category === filter;
-          card.hidden = !match;
-        });
+        activeCategory = chip.dataset.filter || 'all';
+        applyFilters();
       });
+    });
+  }
+
+  // The searchable "Tags" dropdown. `tags` is the distinct tag list.
+  function wireTagFilter(tags) {
+    var wrap = document.getElementById('tagFilter');
+    var toggle = document.getElementById('tagFilterToggle');
+    var panel = document.getElementById('tagFilterPanel');
+    var search = document.getElementById('tagFilterSearch');
+    var list = document.getElementById('tagFilterList');
+    var label = document.getElementById('tagFilterLabel');
+    if (!wrap || !toggle || !panel || !list || !search || !label) return;
+
+    // "Any tag" resets, then one row per tag.
+    var options = [{ value: null, text: 'Any tag' }].concat(
+      tags.map(function (t) { return { value: t, text: ui.titleCase(t) }; }));
+
+    function renderList(query) {
+      var q = (query || '').trim().toLowerCase();
+      var shown = options.filter(function (o) {
+        return o.value === null || o.text.toLowerCase().indexOf(q) !== -1 || o.value.indexOf(q) !== -1;
+      });
+      if (!shown.length) {
+        list.innerHTML = '<p class="tag-filter-empty">No tags match “' + esc(query) + '”.</p>';
+        return;
+      }
+      list.innerHTML = shown.map(function (o) {
+        var selected = (o.value === activeTag) || (o.value === null && activeTag === null);
+        return '<button type="button" class="tag-filter-item" role="option" ' +
+          'data-value="' + esc(o.value == null ? '' : o.value) + '" ' +
+          'aria-selected="' + selected + '">' + esc(o.text) + '</button>';
+      }).join('');
+    }
+
+    function setOpen(open) {
+      panel.hidden = !open;
+      toggle.setAttribute('aria-expanded', String(open));
+      if (open) { renderList(search.value); setTimeout(function () { search.focus(); }, 0); }
+    }
+
+    function pick(value) {
+      activeTag = value || null;
+      label.textContent = activeTag ? ui.titleCase(activeTag) : 'Tags';
+      toggle.classList.toggle('has-active', !!activeTag);
+      applyFilters();
+      setOpen(false);
+    }
+
+    toggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(panel.hidden);
+    });
+    search.addEventListener('input', function () { renderList(search.value); });
+    list.addEventListener('click', function (e) {
+      var item = e.target.closest('.tag-filter-item');
+      if (item) pick(item.dataset.value);
+    });
+    // Click outside / Esc closes the panel.
+    document.addEventListener('click', function (e) {
+      if (!wrap.contains(e.target)) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) setOpen(false);
     });
   }
 
@@ -122,7 +198,7 @@
     var membersEl = document.getElementById('membersRow');
     var gridEl = document.getElementById('familyGrid');
 
-    wireFilters();
+    wireCategoryChips();
 
     try {
       var view = await window.appData.loadFamilyView();
@@ -145,6 +221,19 @@
       }
 
       renderGrid(gridEl, view.posts);
+
+      // Tag dropdown: everything on the board, plus any custom values typed in
+      // the "Add Memory" form (add-memory.js keeps a de-duped list).
+      var stored = [];
+      try { stored = JSON.parse(localStorage.getItem('cornerstone:customTags') || '[]'); }
+      catch (e) { stored = []; }
+      var merged = Array.from(new Set((view.allTags || []).concat(stored))).sort();
+      var tagFilterWrap = document.getElementById('tagFilter');
+      if (merged.length) {
+        wireTagFilter(merged);
+      } else if (tagFilterWrap) {
+        tagFilterWrap.hidden = true;
+      }
     } catch (err) {
       console.error('Family board failed to load data:', err);
       renderError(gridEl);

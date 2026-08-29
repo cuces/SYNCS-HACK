@@ -113,6 +113,12 @@ async function publishPost(post_id) {
   return db.posts.update(post_id, { is_published: 1 });
 }
 
+// Sets a post's community visibility. Stored as 1/0 (not true/false) so the
+// is_published index stays queryable — see getPublishedPosts().
+async function setPostPublished(post_id, isPublic) {
+  return db.posts.update(post_id, { is_published: isPublic ? 1 : 0 });
+}
+
 // Walks the adapted_from chain back to the original post so its ancestry can be displayed.
 async function getLineage(post_id) {
   const chain = []; // Ordered from newest post to original source post

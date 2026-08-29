@@ -97,6 +97,21 @@
         <button class="filter-chip" type="button" data-filter="tradition" aria-pressed="false">Traditions</button>
         <button class="filter-chip" type="button" data-filter="memory" aria-pressed="false">Memories</button>
         <button class="filter-chip" type="button" data-filter="history" aria-pressed="false">Family History</button>
+
+        <!-- Custom / free-text tags — searchable dropdown, populated by family.js -->
+        <div class="tag-filter" id="tagFilter">
+          <button class="filter-chip tag-filter-toggle" type="button" id="tagFilterToggle"
+                  aria-haspopup="true" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 12 22l-8-8V4h10l6.6 6.6a2 2 0 0 1 0 2.8Z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg>
+            <span id="tagFilterLabel">Tags</span>
+            <svg class="tag-filter-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="tag-filter-panel" id="tagFilterPanel" hidden>
+            <input type="search" class="tag-filter-search" id="tagFilterSearch"
+                   placeholder="Search tags…" autocomplete="off" aria-label="Search tags">
+            <div class="tag-filter-list" id="tagFilterList" role="listbox"></div>
+          </div>
+        </div>
       </div>
 
       <div id="familyGrid" class="family-post-grid">

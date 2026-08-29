@@ -616,6 +616,36 @@ h1, h2, h3, h4 { font-weight: 500; }
 /* ----- Filter chips ----- */
 .filter-row { margin-top: var(--space-8); display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
+/* ----- Tags filter (searchable dropdown next to the category chips) ----- */
+.tag-filter { position: relative; }
+.tag-filter-toggle .tag-filter-caret { width: 14px; height: 14px; transition: transform var(--transition); }
+.tag-filter-toggle[aria-expanded="true"] .tag-filter-caret { transform: rotate(180deg); }
+.tag-filter-toggle.has-active { background: var(--forest); border-color: var(--forest); color: #F8F5EC; }
+
+.tag-filter-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
+  width: 260px; max-width: calc(100vw - var(--space-10));
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  padding: var(--space-2);
+}
+.tag-filter-search {
+  width: 100%; height: 36px; padding: 0 var(--space-3);
+  font-family: var(--font-body); font-size: var(--text-ui); color: var(--ink);
+  background: var(--cream); border: 1px solid var(--border); border-radius: var(--radius-xs);
+}
+.tag-filter-search:focus { outline: none; border-color: var(--forest); box-shadow: var(--ring); }
+.tag-filter-list { margin-top: var(--space-2); max-height: 264px; overflow-y: auto; }
+.tag-filter-item {
+  display: block; width: 100%; text-align: left;
+  padding: var(--space-2) var(--space-3); border: none; background: none;
+  font-family: var(--font-body); font-size: var(--text-ui); color: var(--ink);
+  border-radius: var(--radius-xs); transition: background var(--transition);
+}
+.tag-filter-item:hover { background: var(--cream); }
+.tag-filter-item[aria-selected="true"] { background: var(--pale-forest); color: var(--forest-dark); font-weight: 600; }
+.tag-filter-empty { padding: var(--space-3); font-size: var(--text-sm); color: var(--meta); }
+
 /* ----- Post grid ----- */
 .family-post-grid { margin-top: var(--space-6); display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-5); }
 .family-empty, .family-error { margin-top: var(--space-6); }
@@ -827,7 +857,7 @@ body.saved .app-content { padding-top: var(--space-10); }
 /* ============================================================================
    8. PAGE — ADD MEMORY  (add-memory.html)
    ========================================================================== */
-.add-memory-container { max-width: 720px; margin: 0 auto; }
+.add-memory-container { width: 100%; max-width: 100%; margin: 0; }
 
 .editor-card {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
