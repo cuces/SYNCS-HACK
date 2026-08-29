@@ -17,7 +17,8 @@
       const desc = n.description ? `<div class="pt-card-desc">${escapeHtml(n.description)}</div>` : '';
       const date = n.created_at ? `<div class="pt-card-date">${escapeHtml(formatDate(n.created_at))}</div>` : '';
       const highlightClass = String(n.post_id) === String(opts.highlightId) ? ' pt-card--highlight' : '';
-      return `<div class="pt-card${highlightClass}" data-id="${n.post_id}">
+      const rootClass = String(n.post_id) === String(rootId) ? ' pt-card--root' : '';
+      return `<div class="pt-card${highlightClass}${rootClass}" data-id="${n.post_id}">
                 <div class="pt-card-heading">${escapeHtml(title)}</div>
                 ${img}
                 ${desc}
@@ -60,6 +61,13 @@
       const toSet = new Set((visEdges || []).map(e => e.to));
       const roots = (safeNodes || []).filter(n => !toSet.has(n.post_id));
       rootId = roots.length ? roots[0].post_id : (safeNodes[0] && safeNodes[0].post_id);
+    }
+
+    // Give the root a slightly thicker border so it reads as the origin of the lineage.
+    const rootVisNode = visNodes.find(n => String(n.id) === String(rootId));
+    if (rootVisNode) {
+      rootVisNode.borderWidth = Math.max(rootVisNode.borderWidth || 1, 3);
+      rootVisNode.borderWidthSelected = Math.max(rootVisNode.borderWidthSelected || 0, 4);
     }
 
     // embed raw JSON inside application/json script so enhanceGraph can parse it directly
@@ -138,6 +146,7 @@
       .${containerClass} .pt-card-desc { font-size: 0.9rem; color: #333; margin-bottom: 6px; }
       .${containerClass} .pt-card-date { font-size: 0.78rem; color: #666; }
       .${containerClass} .pt-card--highlight { box-shadow: 0 10px 26px rgba(0,0,0,0.06); border: 2px solid #d6c9b8; transform: translateZ(0); }
+      .${containerClass} .pt-card--root { border: 2px solid #b8a894; }
       .${containerClass} .pt-empty { color: #666; font-style: italic; padding: 0.5rem 0; }
       .${containerClass} .pt-vis { width: 100%; height: 100%; background: var(--pt-card-bg); }
       .${containerClass} .pt-vis .vis-network { background: transparent; }

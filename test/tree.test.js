@@ -32,6 +32,45 @@ async function treeRendererTests() {
     };
   });
 
+  await test('renderTreeAsHtml gives the root node a thicker border', async () => {
+    const tree = {
+      nodes: [
+        { post_id: 1, title: 'root' },
+        { post_id: 2, title: 'child' },
+        { post_id: 3, title: 'grandchild' }
+      ],
+      edges: [{ from: 1, to: 2 }, { from: 2, to: 3 }]
+    };
+    const html = renderTreeAsHtml(tree);
+    const dataMatch = html.match(/class="pt-vis-data">([\s\S]*?)<\/script>/);
+    const data = JSON.parse(dataMatch[1]);
+    const rootVisNode = data.nodes.find((n) => n.id === 1);
+    const childVisNode = data.nodes.find((n) => n.id === 2);
+    // the root card carries the marker class, the others don't
+    const rootCardHasClass = /class="pt-card pt-card--root"/.test(html);
+    // count only the class on card divs (ends with "), not the CSS rule
+    const onlyOneRootCard = (html.match(/pt-card--root"/g) || []).length === 1;
+
+    return {
+      input: { tree },
+      expected: {
+        rootId: 1,
+        rootBorderWidth: 3,
+        childHasNoExtraBorder: true,
+        rootCardHasClass: true,
+        onlyOneRootCard: true
+      },
+      actual: {
+        rootId: data.rootId,
+        rootBorderWidth: rootVisNode.borderWidth,
+        childHasNoExtraBorder: childVisNode.borderWidth === undefined,
+        rootCardHasClass,
+        onlyOneRootCard
+      },
+      graphic: html
+    };
+  });
+
   await test('renderTreeAsHtml handles empty tree gracefully', async () => {
     const input = { tree: { nodes: [], edges: [] } };
     const html = renderTreeAsHtml(input.tree);
