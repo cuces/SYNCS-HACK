@@ -3,7 +3,7 @@
 // the global `test()` function and `renderReport()` behavior.
 
 async function treeRendererTests() {
-  await test('renderTreeAsHtml produces nested lists and includes titles', async () => {
+  await test('renderTreeAsHtml produces graph cards and includes titles', async () => {
     const tree = {
       nodes: [
         { post_id: 1, title: 'root' },
@@ -21,12 +21,12 @@ async function treeRendererTests() {
 
     // Provide a custom CSS var to ensure options are accepted.
     const html = renderTreeAsHtml(tree, { cssVars: { '--pt-node-bg': '#ffeeee' } });
-    const liCount = (html.match(/<li/g) || []).length;
+    const cardCount = (html.match(/class="pt-card"/g) || []).length;
 
     return {
       input,
-      expected: { containsRoot: true, liCount: 4 },
-      actual: { containsRoot: html.includes('root'), liCount },
+      expected: { containsRoot: true, cardCount: 4 },
+      actual: { containsRoot: html.includes('root'), cardCount },
       graphic: html
     };
   });
@@ -37,7 +37,8 @@ async function treeRendererTests() {
     return {
       input,
       expected: { isEmpty: true },
-      actual: { isEmpty: !html.includes('<li') },
+      // check for the actual element marker to avoid matching class names in the <style> block
+      actual: { isEmpty: !html.includes('class="pt-card"') },
       graphic: html
     };
   });
