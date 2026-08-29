@@ -33,6 +33,12 @@
   function renderPost(post) {
     document.title = 'Corner Stone — ' + post.title;
 
+    var privacyFooter = document.getElementById('privacy-footer');
+    var editMemoryBtn = document.getElementById('edit-memory-btn');
+    var canEdit = !!post.canEdit;
+    if (privacyFooter) privacyFooter.hidden = !canEdit;
+    if (editMemoryBtn) editMemoryBtn.hidden = !canEdit;
+
     // Hero image (or a category placeholder, matching the board cards).
     var img = document.getElementById('detailImage');
     if (post.imageSrc) {

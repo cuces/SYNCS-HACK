@@ -21,9 +21,45 @@
     }
   }
 
-  // No authentication exists yet, so "the current family" is simply the first
-  // family record in the store. When auth is added, resolve it here instead.
+  // Resolve the logged-in user's account first and use that to pick the active
+  // family. If no session exists, we fall back to the first family record so the
+  // app still behaves sensibly in demo or local-only scenarios.
+  async function getCurrentUserRecord() {
+    const authApi = global.cornerStoneAuth;
+    const sessionUser = authApi && typeof authApi.getCurrentUser === 'function'
+      ? authApi.getCurrentUser()
+      : null;
+
+    if (!sessionUser || !sessionUser.email) return null;
+
+    const allUsers = await getAllUsers();
+    const email = String(sessionUser.email).trim().toLowerCase();
+    const match = allUsers.find(function (user) {
+      return String(user.email || '').trim().toLowerCase() === email;
+    });
+
+    if (match) return match;
+
+    // If a session exists but the DB record is not yet available (for example,
+    // the user was created during this browser session), use the session data
+    // as a compatible fallback rather than losing the active-user context.
+    return {
+      user_id: sessionUser.id || null,
+      name: sessionUser.name || 'Logged in user',
+      email: sessionUser.email,
+      family_id: sessionUser.family_id != null ? sessionUser.family_id : null
+    };
+  }
+
   async function getCurrentFamily() {
+    const currentUser = await getCurrentUserRecord();
+    if (currentUser && currentUser.family_id != null) {
+      const families = await getFamilies();
+      return families.find(function (family) {
+        return Number(family.family_id) === Number(currentUser.family_id);
+      }) || null;
+    }
+
     const families = await getFamilies();
     return families.length ? families[0] : null;
   }
@@ -84,6 +120,7 @@
       getUsersByFamily(family.family_id)
     ]);
 
+    const currentUser = await getCurrentUserRecord();
     const usersById = new Map(users.map(function (u) { return [u.user_id, u]; }));
 
     const recentPosts = posts
@@ -94,7 +131,7 @@
 
     return {
       family: { family_id: family.family_id, name: family.name },
-      currentUserName: users.length ? users[0].name : null,
+      currentUserName: currentUser ? currentUser.name : (users.length ? users[0].name : null),
       recentPosts: recentPosts
     };
   }
@@ -129,6 +166,7 @@
       getUsersByFamily(family.family_id)
     ]);
 
+    const currentUser = await getCurrentUserRecord();
     const usersById = new Map(users.map(function (u) { return [u.user_id, u]; }));
 
     const postViews = posts
@@ -150,11 +188,10 @@
     });
     const customTags = Array.from(tagSet).sort();
 
-    // No auth yet, so the first member is treated as "you".
-    const members = users.map(function (u, i) {
+    const members = users.map(function (u) {
       return {
         name: u.name || 'Member',
-        role: i === 0 ? 'You' : null,
+        role: currentUser && Number(u.user_id) === Number(currentUser.user_id) ? 'You' : null,
         initial: (u.name || '?').trim().charAt(0).toUpperCase() || '?'
       };
     });
@@ -162,7 +199,7 @@
     return {
       family: { family_id: family.family_id, name: family.name },
       members: members,
-      currentUserName: users.length ? users[0].name : null,
+      currentUserName: currentUser ? currentUser.name : (users.length ? users[0].name : null),
       posts: postViews,
       customTags: customTags,
       stats: {
@@ -193,6 +230,7 @@
 
     const author = post.poster_id != null ? await getUserById(post.poster_id) : null;
     const usersById = new Map(author ? [[author.user_id, author]] : []);
+    const currentUser = await getCurrentUserRecord();
 
     const view = toPostView(post, usersById);
     view.familyId = post.family_id != null ? post.family_id : null;
@@ -202,6 +240,12 @@
     // absent, the detail page simply hides them.
     view.ingredients = Array.isArray(post.ingredients) ? post.ingredients.map(String) : [];
     view.steps = Array.isArray(post.steps) ? post.steps.map(String) : [];
+    view.canEdit = !!(
+      currentUser &&
+      post.poster_id != null &&
+      currentUser.user_id != null &&
+      Number(currentUser.user_id) === Number(post.poster_id)
+    );
     return view;
   }
 
@@ -217,6 +261,9 @@
    */
   async function loadCommunityView() {
     await ready();
+
+    const family = await getCurrentFamily();
+    const familyId = family ? Number(family.family_id) : null;
     const [posts, users, families] = await Promise.all([
       getPublishedPosts(),
       getAllUsers(),
@@ -226,19 +273,23 @@
     const usersById = new Map(users.map(function (u) { return [u.user_id, u]; }));
     const familiesById = new Map(families.map(function (f) { return [f.family_id, f]; }));
 
-    const list = posts
+    const filteredPosts = familyId != null
+      ? posts.filter(function (post) { return Number(post.family_id) === familyId; })
+      : posts;
+
+    const list = filteredPosts
       .slice()
       .sort(byNewest)
       .map(function (post) {
         const view = toPostView(post, usersById);
         const tags = Array.isArray(post.tags) ? post.tags.map(String) : [];
-        const family = familiesById.get(post.family_id);
+        const familyRecord = familiesById.get(post.family_id);
         view.tags = tags;
         view.culture = tags.length
           ? tags[0].charAt(0).toUpperCase() + tags[0].slice(1)
           : null;
-        view.contributor = family && family.name
-          ? family.name
+        view.contributor = familyRecord && familyRecord.name
+          ? familyRecord.name
           : (view.authorName || null);
         return view;
       });
