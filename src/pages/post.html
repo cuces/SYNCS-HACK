@@ -230,7 +230,7 @@ ul, ol { margin: 0; padding: 0; }
 .privacy-footer {
   margin-top: var(--space-6); padding-top: var(--space-4);
   border-top: 1px solid var(--hairline);
-  display: flex; align-items: stretch; gap: var(--space-2);
+  display: flex; align-items: stretch; flex-wrap: wrap; gap: var(--space-2);
 }
 .privacy-btn {
   height: 44px; padding: 0 var(--space-4); border-radius: var(--radius-sm);
@@ -244,6 +244,18 @@ ul, ol { margin: 0; padding: 0; }
 #privacy-public { flex: 1; }
 .privacy-btn[aria-pressed="true"] { background: var(--forest); border-color: var(--forest); color: #F8F5EC; flex: 1; }
 .privacy-btn[aria-pressed="false"] { flex: 0 0 auto; }
+
+/* "Extend memory" — creates the adaptive child in the lineage */
+.extend-btn {
+  height: 44px; padding: 0 var(--space-4); border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  border: 1px solid var(--clay); background: var(--clay); color: #F8F5EC;
+  flex: 1 1 160px;
+  transition: background var(--transition), border-color var(--transition);
+}
+.extend-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.extend-btn:hover { background: #8F6942; border-color: #8F6942; }
 
 /* ===== Loading / missing states ===== */
 .card-note {
@@ -372,6 +384,10 @@ ul, ol { margin: 0; padding: 0; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3Z"/></svg>
         Share to Community
       </button>
+      <a class="extend-btn" id="extend-btn" href="add-memory.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="15" r="2.5"/><path d="M6 8.5v7"/><path d="M6 12h6a3 3 0 0 0 3-3V8.5"/></svg>
+        Extend memory
+      </a>
     </div>
 
   </div>

@@ -72,8 +72,12 @@
       <div class="add-memory-container">
         
         <div class="editor-card">
-          <h1>Share a Memory</h1>
-          <p class="subtitle">Preserve your family's stories and traditions.</p>
+          <h1 id="editorHeading">Share a Memory</h1>
+          <p class="subtitle" id="editorSubtitle">Preserve your family's stories and traditions.</p>
+
+          <!-- Shown only when this memory is being created as an adaptation of
+               an existing one (add-memory.html?adaptedFrom=<post_id>). -->
+          <div class="adapting-banner" id="adaptingBanner" hidden></div>
 
           <form id="memoryForm" class="memory-form">
             
@@ -236,9 +240,10 @@
 
 </div>
 
-<!-- Load order: Dexie -> db.js -> geo.js -> add-memory.js -->
+<!-- Load order: Dexie -> db.js -> seed.js -> geo.js -> add-memory.js -->
 <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
 <script src="../db.js"></script>
+<script src="../seed.js"></script>
 <script src="../geo.js"></script>
 <script src="../add-memory.js"></script>
 </body>

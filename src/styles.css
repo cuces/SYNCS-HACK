@@ -947,6 +947,17 @@ body.saved .app-content { padding-top: var(--space-10); }
 }
 .image-remove-btn:hover { background: rgba(42, 37, 31, 1); }
 
+/* ----- "Extending an existing memory" banner ----- */
+.adapting-banner {
+  margin: 0 0 var(--space-8); padding: var(--space-4) var(--space-4);
+  border: 1px solid var(--clay); border-left-width: 3px;
+  border-radius: var(--radius-xs);
+  background: var(--cream); color: var(--brown);
+  font-size: var(--text-sm); line-height: 1.5;
+}
+.adapting-banner strong { display: block; color: var(--ink); font-weight: 600; margin-bottom: 2px; }
+.adapting-banner .parent-name { font-family: var(--font-display); font-style: italic; }
+
 /* ----- Inline form message ----- */
 .form-flash {
   margin: 0 0 var(--space-6); padding: 11px var(--space-4); border-radius: var(--radius-xs);

@@ -38,6 +38,65 @@ function populateCountries() {
 const activeFormats = { bold: false, italic: false, underline: false };
 let uploadedImages = [];
 
+// When the page is opened as add-memory.html?adaptedFrom=<post_id>, the new
+// memory is created as a child of that post: `adapted_from` is set on save, so
+// it appears as a branch in the lineage graph + map. `adaptedFromPost` is the
+// parent row once loaded (or null).
+const adaptedFromId = Number(new URLSearchParams(window.location.search).get('adaptedFrom')) || null;
+let adaptedFromPost = null;
+
+// Show the "you are extending X" banner and retarget the page copy.
+function showAdaptingBanner(parent) {
+  const banner = document.getElementById('adaptingBanner');
+  if (!banner) return;
+  banner.hidden = false;
+  banner.innerHTML =
+    '<strong>Extending a memory</strong>' +
+    'This will branch from <span class="parent-name">' +
+    parent.title.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])) +
+    '</span> in the family lineage.';
+
+  const heading = document.getElementById('editorHeading');
+  const subtitle = document.getElementById('editorSubtitle');
+  if (heading) heading.textContent = 'Extend a Memory';
+  if (subtitle) subtitle.textContent = 'Add your own take — it keeps a link back to the original.';
+  const submitBtn = form.querySelector('button[type="submit"]');
+  if (submitBtn) submitBtn.textContent = 'Save adaptation';
+}
+
+// Best-effort: copy the parent's country / culture / type so the branch starts
+// from the same place. The user can still change anything.
+function prefillFromParent(parent) {
+  if (countrySelect && parent.country) {
+    const hasOption = Array.from(countrySelect.options).some((o) => o.value === parent.country);
+    if (hasOption) countrySelect.value = parent.country;
+  }
+
+  const tags = Array.isArray(parent.tags) ? parent.tags.map((t) => String(t).toLowerCase()) : [];
+
+  // Culture: match a radio, else fall back to the custom field.
+  const cultureTag = tags[0];
+  if (cultureTag) {
+    const match = document.querySelector('input[name="cuisine"][value="' + cultureTag + '"]');
+    if (match) {
+      match.checked = true;
+    } else {
+      const custom = document.querySelector('input[name="cuisine"][value="custom-cuisine"]');
+      if (custom) { custom.checked = true; customCuisineInput.classList.remove('hidden'); customCuisineInput.value = cultureTag; }
+    }
+    handleCuisineChange();
+  }
+
+  // Memory type: fuzzy-match the parent category against the radio options.
+  const cat = String(parent.category || '').toLowerCase();
+  const typeMap = { recipe: 'recipes', recipes: 'recipes', story: 'stories', stories: 'stories', skill: 'skills', skills: 'skills' };
+  const typeValue = typeMap[cat];
+  if (typeValue) {
+    const typeRadio = document.querySelector('input[name="memoryType"][value="' + typeValue + '"]');
+    if (typeRadio) { typeRadio.checked = true; handleMemoryTypeChange(); }
+  }
+}
+
 function showFlash(message, kind = 'error') {
   let el = document.getElementById('formFlash');
   if (!el) {
@@ -193,7 +252,9 @@ function resetForm() {
 
 cancelBtn.addEventListener('click', () => {
   if (confirm('Discard this memory?')) {
-    window.location.href = 'index.html';
+    window.location.href = adaptedFromId
+      ? 'post.html?id=' + adaptedFromId + '&from=family'
+      : 'index.html';
   }
 });
 
@@ -242,7 +303,7 @@ form.addEventListener('submit', async (e) => {
     if (memoryType === 'custom') tagList.push(customMemoryType.toLowerCase());
     else tagList.push(memoryType.toLowerCase());
 
-    await createPost({
+    const newId = await createPost({
       poster_id: posterId,
       family_id: familyId,
       title,
@@ -253,15 +314,23 @@ form.addEventListener('submit', async (e) => {
       tags: tagList,
       category: memoryType === 'custom' ? 'memory' : memoryType,
       is_published: visibility === 'community-wide' ? 1 : 0,
+      // The lineage link. null for a brand-new root memory.
+      adapted_from: adaptedFromPost ? adaptedFromPost.post_id : null,
       country: country,
       lat: coords ? coords.lat : null,
       lng: coords ? coords.lng : null
     });
 
-    showSuccess('Memory saved.');
+    showSuccess(adaptedFromPost ? 'Adaptation saved.' : 'Memory saved.');
     resetForm();
     setTimeout(() => {
-      window.location.href = visibility === 'community-wide' ? 'community.html' : 'family.html';
+      if (adaptedFromPost) {
+        // Land on the new memory's page — its embedded graph + map now show it
+        // branching off the original.
+        window.location.href = 'post.html?id=' + newId + '&from=family';
+      } else {
+        window.location.href = visibility === 'community-wide' ? 'community.html' : 'family.html';
+      }
     }, 900);
   } catch (error) {
     console.error('Error saving memory:', error);
@@ -271,11 +340,26 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-function initAddMemoryPage() {
+async function initAddMemoryPage() {
   populateCountries();
   handleCuisineChange();
   handleMemoryTypeChange();
   updateToolbarState();
+
+  // If this is an adaptation, load the parent memory and set the page up for it.
+  if (adaptedFromId) {
+    try {
+      if (window.showcaseSeed) await window.showcaseSeed.ensure();
+      adaptedFromPost = await getPostById(adaptedFromId);
+      if (adaptedFromPost) {
+        showAdaptingBanner(adaptedFromPost);
+        prefillFromParent(adaptedFromPost);
+      }
+    } catch (err) {
+      console.error('Could not load the memory being extended:', err);
+    }
+  }
+
   setTimeout(() => editor.focus(), 100);
 }
 

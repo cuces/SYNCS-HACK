@@ -668,6 +668,51 @@ async function standaloneTests() {
       }
     };
   });
+
+  // Mirrors what the "Extend memory" button does: from a post, a child is
+  // created with adapted_from = that post. The lineage graph + map are read
+  // straight from the DB, so the new branch just appears.
+  await test('"Extend memory": a child with adapted_from shows up in the parent\'s tree and on the map', async () => {
+    const familyId = await createFamily('Kaur');
+    const parentId = await createPost({
+      poster_id: 1, family_id: familyId, title: 'Amma\'s chai', description: '', file: null,
+      category: 'recipe', tags: ['indian', 'drink'], is_published: 1,
+      country: 'India', lat: 20.5937, lng: 78.9629
+    });
+    const beforeNodes = (await getFullTree(parentId)).nodes.length; // just the parent
+
+    // --- the "Extend memory" action ---
+    const childId = await createPost({
+      poster_id: 1, family_id: familyId, title: 'Oat-milk chai', description: '', file: null,
+      category: 'recipe', tags: ['australian', 'drink'], is_published: 0,
+      adapted_from: parentId,
+      country: 'Australia', lat: -33.8688, lng: 151.2093
+    });
+
+    const parentTree = await getFullTree(parentId); // post.html?id=<parent> iframe reads this
+    const childTree = await getFullTree(childId);   // where the redirect lands
+    const map = freshTestMap();
+    const r = plotTreeOnMap(map, childTree);
+
+    return {
+      input: { note: 'parent then extend' },
+      expected: {
+        beforeExtend: 1,
+        parentTreeNodes: 2, parentTreeEdges: 1,
+        childIsLeafOfSameTree: true,
+        markers: 2, lines: 1
+      },
+      actual: {
+        beforeExtend: beforeNodes,
+        parentTreeNodes: parentTree.nodes.length,
+        parentTreeEdges: parentTree.edges.length,
+        childIsLeafOfSameTree: childTree.nodes.length === 2 &&
+          childTree.nodes[0].post_id === parentId &&
+          childTree.edges.some((e) => e.from === parentId && e.to === childId),
+        markers: r.markers, lines: r.lines
+      }
+    };
+  });
 }
 
 // ---------- Run ----------

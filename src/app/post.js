@@ -123,6 +123,15 @@
   }
 
   function wireToggles() {
+    // "Extend memory" — start a new memory that branches from this one. The
+    // form (add-memory) reads ?adaptedFrom and sets `adapted_from` on save, so
+    // the new memory shows up as a child in the lineage graph + map.
+    var extendBtn = document.getElementById('extend-btn');
+    var id = postIdFromUrl();
+    if (extendBtn && id) {
+      extendBtn.href = 'add-memory.html?adaptedFrom=' + encodeURIComponent(id);
+    }
+
     // Save / bookmark — persisted per-browser via bookmarks.js.
     var saveBtn = document.getElementById('save-btn');
     saveBtn.addEventListener('click', function () {
