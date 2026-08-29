@@ -1,7 +1,7 @@
 // community.js — "Community Archive" controller.
 //
 // Loads every published post (across all families) from the database via
-// data.js and renders the archive: an ethnicity filter rail, a category rail, a
+// data.js and renders the archive: a culture filter rail, a category rail, a
 // featured memory and a paged grid of cards. Filtering and search run over the
 // already-loaded set; nothing here writes to the database.
 //
@@ -12,9 +12,9 @@
 
   var esc = ui.escapeHtml;
 
-  // Ethnicity chips shown up front. These are presentational — a post whose
-  // ethnicity isn't listed still shows under "All". Anything else that actually
-  // appears on a published post is surfaced through the "Other" ethnicity
+  // Culture chips shown up front. These are presentational — a post whose
+  // culture isn't listed still shows under "All". Anything else that actually
+  // appears on a published post is surfaced through the "Custom cultures"
   // dropdown (built at load time from the posts themselves — see init()).
   var CULTURES = ['All', 'Korean', 'Chinese', 'Vietnamese', 'Greek', 'Indian', 'Filipino', 'Lebanese'];
   var customCultures = []; // populated from ITEMS once the archive has loaded
@@ -107,8 +107,8 @@
       cultureListEl.appendChild(li);
     });
 
-    // "Other" ethnicity dropdown — ethnicities that appear on a published post
-    // but aren't one of the fixed chips above. Hidden when there are none.
+    // "Custom cultures" dropdown — cultures that appear on a published post but
+    // aren't one of the fixed chips above. Hidden entirely when there are none.
     if (customCultures.length) {
       var moreLi = document.createElement('li');
       moreLi.style.position = 'relative';
@@ -119,7 +119,7 @@
       moreBtn.className = 'culture-chip more-chip';
       moreBtn.type = 'button';
       moreBtn.setAttribute('aria-pressed', String(!!activeCustom));
-      moreBtn.innerHTML = esc(activeCustom || 'Other') +
+      moreBtn.innerHTML = esc(activeCustom || 'Custom cultures') +
         ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
 
       var dropdown = document.createElement('div');
@@ -251,7 +251,7 @@
     var filtered = ITEMS.filter(matchesFilters);
     sectionTitleEl.textContent = sectionTitleFor();
 
-    var cultureLabel = state.culture === 'All' ? 'All ethnicities' : state.culture;
+    var cultureLabel = state.culture === 'All' ? 'All cultures' : state.culture;
     var categoryLabel = state.category === 'All' ? 'All categories' : state.category;
     sectionMetaEl.textContent = cultureLabel + ' · ' + categoryLabel + ' · ' +
       filtered.length + ' contribution' + (filtered.length === 1 ? '' : 's');
@@ -291,7 +291,7 @@
       var view = await window.appData.loadCommunityView();
       ITEMS = view.posts.map(toItem);
 
-      // Build the "Other" ethnicity list from ethnicities on real posts that
+      // Build the "Custom cultures" list from cultures on real posts that
       // aren't already one of the fixed chips, then rebuild the rail.
       var seen = {};
       ITEMS.forEach(function (item) {

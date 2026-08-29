@@ -8,7 +8,7 @@
 //     more than one tree
 //
 //   - Family board  : all 11 memories of The Chen Family
-//   - Community      : the 10 published ones, across ~7 ethnicities
+//   - Community      : the 10 published ones, across ~7 cultures
 //   - Post detail    : full descriptions + the lineage graph / map embedded below
 //   - Map & graph    : China (x3 cities), South Korea, Poland, Lebanon, Italy,
 //                      Australia (x2) as markers; Nepal has a country but no pin
