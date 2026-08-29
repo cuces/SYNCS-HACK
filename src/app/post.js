@@ -116,22 +116,51 @@
   function setPrivacy(isPublic) {
     var priv = document.getElementById('privacy-private');
     var pub = document.getElementById('privacy-public');
+    if (!priv || !pub) return;
     priv.setAttribute('aria-pressed', String(!isPublic));
     pub.setAttribute('aria-pressed', String(!!isPublic));
   }
 
+  function toast(message) {
+    var el = document.getElementById('postToast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'postToast';
+      el.className = 'post-toast';
+      document.body.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove('show'); }, 1800);
+  }
+
+  var savingPrivacy = false;
+
   // Persist the community-visibility choice to the database so it sticks after
-  // you leave the page (and shows up on the family / community boards).
+  // you leave the page (and shows up on the family / community boards). Reads
+  // the row back afterwards so the buttons reflect what's actually stored.
   async function savePrivacy(isPublic) {
     var id = Number(postIdFromUrl());
-    if (!id) return;
-    var before = document.getElementById('privacy-public').getAttribute('aria-pressed') === 'true';
+    if (!id || savingPrivacy) return;
+    if (typeof setPostPublished !== 'function') {
+      console.error('setPostPublished missing — is db.js loaded?');
+      return;
+    }
+    savingPrivacy = true;
     setPrivacy(isPublic); // optimistic
     try {
       await setPostPublished(id, isPublic);
+      var row = typeof getPostById === 'function' ? await getPostById(id) : null;
+      var storedPublic = row ? (row.is_published === 1 || row.is_published === true) : isPublic;
+      setPrivacy(storedPublic);
+      toast(storedPublic ? 'Shared to the community' : 'Set to private');
     } catch (err) {
       console.error('Could not update visibility:', err);
-      setPrivacy(before); // revert on failure
+      setPrivacy(!isPublic); // revert
+      toast("Couldn't update — try again");
+    } finally {
+      savingPrivacy = false;
     }
   }
 
@@ -163,13 +192,16 @@
       stepsPreview.style.display = 'none';
     });
 
-    // Privacy switch — persisted to the database.
-    document.getElementById('privacy-private').addEventListener('click', function () {
-      savePrivacy(false);
-    });
-    document.getElementById('privacy-public').addEventListener('click', function () {
-      savePrivacy(true);
-    });
+    // Privacy switch — persisted to the database. Delegated off the footer so
+    // it keeps working regardless of how the buttons get re-rendered.
+    var footer = document.querySelector('.privacy-footer');
+    if (footer) {
+      footer.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('.privacy-btn') : null;
+        if (!btn) return;
+        savePrivacy(btn.id === 'privacy-public');
+      });
+    }
 
     // "..." menu.
     var menuBtn = document.getElementById('menu-btn');

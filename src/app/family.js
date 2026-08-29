@@ -10,8 +10,9 @@
 
   var esc = ui.escapeHtml;
 
-  // Active filters — the grid shows a card only when it matches BOTH.
+  // Active filters — the grid shows a card only when it matches ALL of them.
   var activeCategory = 'all';
+  var activeCulture = null;
   var activeTag = null;
 
   // ----- Rendering -------------------------------------------------------
@@ -104,14 +105,15 @@
 
   // ----- Filters (operate on already-rendered cards) ------------------------
 
-  // Re-apply both the category chip and the tag dropdown to every card.
+  // Re-apply the category chip + both custom dropdowns to every card.
   function applyFilters() {
     var cards = document.querySelectorAll('#familyGrid .post-card');
     Array.prototype.forEach.call(cards, function (card) {
-      var catOk = activeCategory === 'all' || card.dataset.category === activeCategory;
       var cardTags = (card.dataset.tags || '').split('|');
+      var catOk = activeCategory === 'all' || card.dataset.category === activeCategory;
+      var cultureOk = !activeCulture || cardTags.indexOf(activeCulture) !== -1;
       var tagOk = !activeTag || cardTags.indexOf(activeTag) !== -1;
-      card.hidden = !(catOk && tagOk);
+      card.hidden = !(catOk && cultureOk && tagOk);
     });
   }
 
@@ -127,31 +129,41 @@
     });
   }
 
-  // The searchable "Tags" dropdown. `tags` is the distinct tag list.
-  function wireTagFilter(tags) {
-    var wrap = document.getElementById('tagFilter');
-    var toggle = document.getElementById('tagFilterToggle');
-    var panel = document.getElementById('tagFilterPanel');
-    var search = document.getElementById('tagFilterSearch');
-    var list = document.getElementById('tagFilterList');
-    var label = document.getElementById('tagFilterLabel');
-    if (!wrap || !toggle || !panel || !list || !search || !label) return;
+  // A searchable single-select dropdown filter. `cfg`:
+  //   prefix       — element id prefix (<prefix>Filter, <prefix>FilterToggle, …)
+  //   values       — the list of options (strings)
+  //   anyLabel     — text for the "clear" row
+  //   defaultLabel — button text when nothing is selected
+  //   onPick(value) — called with the chosen value (or null to clear)
+  //   isSelected()  — returns the currently-selected value, for highlighting
+  function wireDropdownFilter(cfg) {
+    var wrap = document.getElementById(cfg.prefix + 'Filter');
+    var toggle = document.getElementById(cfg.prefix + 'FilterToggle');
+    var panel = document.getElementById(cfg.prefix + 'FilterPanel');
+    var search = document.getElementById(cfg.prefix + 'FilterSearch');
+    var list = document.getElementById(cfg.prefix + 'FilterList');
+    var label = document.getElementById(cfg.prefix + 'FilterLabel');
+    if (!wrap || !toggle || !panel || !search || !list || !label) return;
+    if (!cfg.values.length) { wrap.hidden = true; return; }
+    wrap.hidden = false;
 
-    // "Any tag" resets, then one row per tag.
-    var options = [{ value: null, text: 'Any tag' }].concat(
-      tags.map(function (t) { return { value: t, text: ui.titleCase(t) }; }));
+    var options = [{ value: null, text: cfg.anyLabel }].concat(
+      cfg.values.map(function (v) { return { value: v, text: ui.titleCase(v) }; }));
 
     function renderList(query) {
       var q = (query || '').trim().toLowerCase();
       var shown = options.filter(function (o) {
-        return o.value === null || o.text.toLowerCase().indexOf(q) !== -1 || o.value.indexOf(q) !== -1;
+        return o.value === null ||
+          o.text.toLowerCase().indexOf(q) !== -1 ||
+          o.value.indexOf(q) !== -1;
       });
       if (!shown.length) {
-        list.innerHTML = '<p class="tag-filter-empty">No tags match “' + esc(query) + '”.</p>';
+        list.innerHTML = '<p class="tag-filter-empty">Nothing matches “' + esc(query) + '”.</p>';
         return;
       }
+      var current = cfg.isSelected();
       list.innerHTML = shown.map(function (o) {
-        var selected = (o.value === activeTag) || (o.value === null && activeTag === null);
+        var selected = o.value === current;
         return '<button type="button" class="tag-filter-item" role="option" ' +
           'data-value="' + esc(o.value == null ? '' : o.value) + '" ' +
           'aria-selected="' + selected + '">' + esc(o.text) + '</button>';
@@ -165,29 +177,22 @@
     }
 
     function pick(value) {
-      activeTag = value || null;
-      label.textContent = activeTag ? ui.titleCase(activeTag) : 'Tags';
-      toggle.classList.toggle('has-active', !!activeTag);
+      var v = value || null;
+      label.textContent = v ? ui.titleCase(v) : cfg.defaultLabel;
+      toggle.classList.toggle('has-active', !!v);
+      cfg.onPick(v);
       applyFilters();
       setOpen(false);
     }
 
-    toggle.addEventListener('click', function (e) {
-      e.stopPropagation();
-      setOpen(panel.hidden);
-    });
+    toggle.addEventListener('click', function (e) { e.stopPropagation(); setOpen(panel.hidden); });
     search.addEventListener('input', function () { renderList(search.value); });
     list.addEventListener('click', function (e) {
-      var item = e.target.closest('.tag-filter-item');
+      var item = e.target && e.target.closest ? e.target.closest('.tag-filter-item') : null;
       if (item) pick(item.dataset.value);
     });
-    // Click outside / Esc closes the panel.
-    document.addEventListener('click', function (e) {
-      if (!wrap.contains(e.target)) setOpen(false);
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && !panel.hidden) setOpen(false);
-    });
+    document.addEventListener('click', function (e) { if (!wrap.contains(e.target)) setOpen(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) setOpen(false); });
   }
 
   // ----- Boot ----------------------------------------------------------
@@ -222,18 +227,24 @@
 
       renderGrid(gridEl, view.posts);
 
-      // Tag dropdown: everything on the board, plus any custom values typed in
-      // the "Add Memory" form (add-memory.js keeps a de-duped list).
-      var stored = [];
-      try { stored = JSON.parse(localStorage.getItem('cornerstone:customTags') || '[]'); }
-      catch (e) { stored = []; }
-      var merged = Array.from(new Set((view.allTags || []).concat(stored))).sort();
-      var tagFilterWrap = document.getElementById('tagFilter');
-      if (merged.length) {
-        wireTagFilter(merged);
-      } else if (tagFilterWrap) {
-        tagFilterWrap.hidden = true;
-      }
+      // Two searchable dropdowns, built from the free-text values on PUBLISHED
+      // posts (see data.js). Each hides itself when it has nothing to show.
+      wireDropdownFilter({
+        prefix: 'culture',
+        values: view.customCultures || [],
+        anyLabel: 'Any culture',
+        defaultLabel: 'Custom cultures',
+        isSelected: function () { return activeCulture; },
+        onPick: function (v) { activeCulture = v; }
+      });
+      wireDropdownFilter({
+        prefix: 'tag',
+        values: view.customTags || [],
+        anyLabel: 'Any tag',
+        defaultLabel: 'Custom tags',
+        isSelected: function () { return activeTag; },
+        onPick: function (v) { activeTag = v; }
+      });
     } catch (err) {
       console.error('Family board failed to load data:', err);
       renderError(gridEl);

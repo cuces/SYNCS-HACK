@@ -38,28 +38,10 @@ function populateCountries() {
 const activeFormats = { bold: false, italic: false, underline: false };
 let uploadedImages = [];
 
-// ----- Custom tag registry --------------------------------------------------
-// Whenever someone picks "Custom" for the culture or the memory type and types
-// a value, we remember it here so the My Family page can offer it as a filter.
-// (It's also on the post itself, but this keeps a tidy, de-duped list.)
-const CUSTOM_TAGS_KEY = 'cornerstone:customTags';
-
-function getCustomTags() {
-  try { return JSON.parse(localStorage.getItem(CUSTOM_TAGS_KEY) || '[]'); }
-  catch (e) { return []; }
-}
-
-function rememberCustomTag(value) {
-  const tag = String(value || '').trim().toLowerCase();
-  if (!tag) return;
-  try {
-    const list = getCustomTags();
-    if (list.indexOf(tag) === -1) {
-      list.push(tag);
-      localStorage.setItem(CUSTOM_TAGS_KEY, JSON.stringify(list));
-    }
-  } catch (e) { /* private mode / storage disabled — the tag is still on the post */ }
-}
+// Custom culture / memory-type values entered here land in the post's `tags`.
+// The My Family board derives its "Custom cultures" / "Custom tags" dropdowns
+// from the tags on PUBLISHED posts, so anything shared to the community shows
+// up there automatically — no separate registry needed.
 
 // When the page is opened as add-memory.html?adaptedFrom=<post_id>, the new
 // memory is created as a child of that post: `adapted_from` is set on save, so
@@ -321,14 +303,12 @@ form.addEventListener('submit', async (e) => {
       ? members[0].user_id
       : await createUser({ name: 'You', family_id: familyId, email: null, phone: null });
 
+    // tags[0] is always the culture; tags[1] the memory type. The My Family
+    // board reads these positions to build its custom-culture / custom-tag lists.
     const cultureTag = (cuisine === 'custom-cuisine' ? customCuisine : cuisine).toLowerCase();
     const tagList = [cultureTag];
     if (memoryType === 'custom') tagList.push(customMemoryType.toLowerCase());
     else tagList.push(memoryType.toLowerCase());
-
-    // Keep any hand-typed custom values in the registry for the family filter.
-    if (cuisine === 'custom-cuisine') rememberCustomTag(customCuisine);
-    if (memoryType === 'custom') rememberCustomTag(customMemoryType);
 
     const newId = await createPost({
       poster_id: posterId,

@@ -136,11 +136,23 @@
       .sort(byNewest)
       .map(function (p) { return toPostView(p, usersById); });
 
-    // Every distinct tag across the board, sorted — powers the "Tags" filter
-    // dropdown. Includes the free-text ones people typed via the custom fields.
+    // Custom cultures / custom tags for the My Family filter dropdowns.
+    // Only from PUBLISHED posts (so "public" is respected), and only the
+    // free-text values — the built-in radio options are filtered out.
+    // Convention: tags[0] is the culture, tags[1] the memory type.
+    const STANDARD_CULTURES = ['chinese', 'greek', 'korean'];
+    const STANDARD_TYPES = ['recipes', 'stories', 'skills'];
+    const cultureSet = new Set();
     const tagSet = new Set();
-    postViews.forEach(function (p) { p.tags.forEach(function (t) { if (t) tagSet.add(t); }); });
-    const allTags = Array.from(tagSet).sort();
+    postViews.filter(function (p) { return p.isPublished; }).forEach(function (p) {
+      const t = p.tags || [];
+      if (t[0] && STANDARD_CULTURES.indexOf(t[0]) === -1) cultureSet.add(t[0]);
+      t.slice(1).forEach(function (tag) {
+        if (tag && STANDARD_TYPES.indexOf(tag) === -1) tagSet.add(tag);
+      });
+    });
+    const customCultures = Array.from(cultureSet).sort();
+    const customTags = Array.from(tagSet).sort();
 
     // No auth yet, so the first member is treated as "you".
     const members = users.map(function (u, i) {
@@ -156,7 +168,8 @@
       members: members,
       currentUserName: users.length ? users[0].name : null,
       posts: postViews,
-      allTags: allTags,
+      customCultures: customCultures,
+      customTags: customTags,
       stats: {
         members: users.length,
         posts: postViews.length,
