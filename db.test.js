@@ -5,6 +5,13 @@
 //
 // Uses a tiny home-grown harness so there is no framework/build step,
 // matching the rest of the project.
+//
+// Every test reports three things and the report shows all of them,
+// pass or fail:
+//   - input:    what was fed into the function(s) under test
+//   - expected: what the function(s) should produce
+//   - actual:   what they actually produced this run
+// A test passes when `expected` deep-equals `actual`.
 
 // ---------- Minimal test harness ----------
 
@@ -19,29 +26,40 @@ async function resetDb() {
   ]);
 }
 
+// Structural equality for plain values/arrays/objects (enough for these tests).
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a);
+  const kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  return ka.every(k => deepEqual(a[k], b[k]));
+}
+
+// Each `fn` returns { input, expected, actual }.
 async function test(name, fn) {
+  await resetDb();
+  let input, expected, actual, error = null, pass = false;
   try {
-    await resetDb();
-    await fn();
-    _results.push({ name, pass: true });
-    console.log('PASS —', name);
+    const r = await fn();
+    input = r.input;
+    expected = r.expected;
+    actual = r.actual;
+    pass = deepEqual(expected, actual);
   } catch (err) {
-    _results.push({ name, pass: false, error: err && err.message ? err.message : String(err) });
-    console.error('FAIL —', name, err);
+    error = err && err.message ? err.message : String(err);
   }
+  _results.push({ name, input, expected, actual, error, pass });
+  console.log(`${pass ? 'PASS' : 'FAIL'} — ${name}`, { input, expected, actual, error });
 }
 
-function assert(cond, msg) {
-  if (!cond) throw new Error(msg || 'assertion failed');
+function fmt(v) {
+  if (v === undefined) return 'undefined';
+  return JSON.stringify(v, null, 2);
 }
 
-function assertEqual(actual, expected, msg) {
-  if (actual !== expected) {
-    throw new Error(`${msg || 'values differ'} — expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
-  }
-}
-
-// Render the report into the page once all tests have finished.
+// Render the full report into the page once all tests have finished.
 function renderReport() {
   const list = document.getElementById('results');
   const summary = document.getElementById('summary');
@@ -51,13 +69,29 @@ function renderReport() {
   for (const r of _results) {
     const li = document.createElement('li');
     li.className = r.pass ? 'pass' : 'fail';
-    li.textContent = `${r.pass ? '✓' : '✗'} ${r.name}`;
-    if (!r.pass) {
-      const err = document.createElement('span');
-      err.className = 'err';
-      err.textContent = r.error;
-      li.appendChild(err);
-    }
+
+    const head = document.createElement('div');
+    head.className = 'head';
+    head.textContent = `${r.pass ? '✓' : '✗'} ${r.name}`;
+    li.appendChild(head);
+
+    const addBlock = (label, value) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'block';
+      const tag = document.createElement('span');
+      tag.className = 'label';
+      tag.textContent = label;
+      const pre = document.createElement('pre');
+      pre.textContent = value;
+      wrap.appendChild(tag);
+      wrap.appendChild(pre);
+      li.appendChild(wrap);
+    };
+
+    addBlock('input', fmt(r.input));
+    addBlock('expected', fmt(r.expected));
+    addBlock('actual', r.error ? `(threw) ${r.error}` : fmt(r.actual));
+
     list.appendChild(li);
   }
 
@@ -69,24 +103,35 @@ function renderReport() {
 
 async function familyTests() {
   await test('createFamily returns a numeric id and persists the row', async () => {
-    const id = await createFamily('Nguyen');
-    assert(typeof id === 'number', 'id should be a number');
+    const input = { name: 'Nguyen' };
+    const id = await createFamily(input.name);
     const row = await db.families.get(id);
-    assertEqual(row.name, 'Nguyen', 'stored family name');
+    return {
+      input,
+      expected: { idIsNumber: true, storedName: 'Nguyen' },
+      actual: { idIsNumber: typeof id === 'number', storedName: row ? row.name : null }
+    };
   });
 
   await test('getFamilies returns every family created', async () => {
-    await createFamily('Nguyen');
-    await createFamily('Okafor');
+    const input = { create: ['Nguyen', 'Okafor'] };
+    for (const n of input.create) await createFamily(n);
     const families = await getFamilies();
-    assertEqual(families.length, 2, 'family count');
-    const names = families.map(f => f.name).sort();
-    assertEqual(names.join(','), 'Nguyen,Okafor', 'family names');
+    return {
+      input,
+      expected: { count: 2, names: ['Nguyen', 'Okafor'] },
+      actual: { count: families.length, names: families.map(f => f.name).sort() }
+    };
   });
 
   await test('getFamilies returns an empty array when there are none', async () => {
+    const input = { create: [] };
     const families = await getFamilies();
-    assert(Array.isArray(families) && families.length === 0, 'should be empty array');
+    return {
+      input,
+      expected: { isArray: true, count: 0 },
+      actual: { isArray: Array.isArray(families), count: families.length }
+    };
   });
 }
 
@@ -95,29 +140,38 @@ async function familyTests() {
 async function userTests() {
   await test('createUser persists all provided fields', async () => {
     const familyId = await createFamily('Nguyen');
-    const userId = await createUser({
-      name: 'Mai',
-      family_id: familyId,
-      email: 'mai@example.com',
-      phone: '0400000000'
-    });
+    const input = { name: 'Mai', family_id: familyId, email: 'mai@example.com', phone: '0400000000' };
+    const userId = await createUser(input);
     const row = await db.users.get(userId);
-    assertEqual(row.name, 'Mai', 'name');
-    assertEqual(row.family_id, familyId, 'family_id');
-    assertEqual(row.email, 'mai@example.com', 'email');
-    assertEqual(row.phone, '0400000000', 'phone');
+    return {
+      input,
+      expected: { name: 'Mai', family_id: familyId, email: 'mai@example.com', phone: '0400000000' },
+      actual: { name: row.name, family_id: row.family_id, email: row.email, phone: row.phone }
+    };
   });
 
   await test('getUsersByFamily only returns members of that family', async () => {
     const a = await createFamily('Nguyen');
     const b = await createFamily('Okafor');
-    await createUser({ name: 'Mai', family_id: a, email: 'mai@example.com', phone: '1' });
-    await createUser({ name: 'Linh', family_id: a, email: 'linh@example.com', phone: '2' });
-    await createUser({ name: 'Chidi', family_id: b, email: 'chidi@example.com', phone: '3' });
-
+    const input = {
+      familyA_id: a,
+      familyB_id: b,
+      users: [
+        { name: 'Mai', family_id: a },
+        { name: 'Linh', family_id: a },
+        { name: 'Chidi', family_id: b }
+      ],
+      query: { family_id: a }
+    };
+    for (const u of input.users) {
+      await createUser({ name: u.name, family_id: u.family_id, email: `${u.name}@example.com`, phone: '0' });
+    }
     const familyA = await getUsersByFamily(a);
-    assertEqual(familyA.length, 2, 'family A user count');
-    assert(familyA.every(u => u.family_id === a), 'all belong to family A');
+    return {
+      input,
+      expected: { count: 2, allInFamilyA: true },
+      actual: { count: familyA.length, allInFamilyA: familyA.every(u => u.family_id === a) }
+    };
   });
 }
 
@@ -126,48 +180,73 @@ async function userTests() {
 async function postTests() {
   await test('createPost sets defaults (tags, arrays, created_at, unpublished)', async () => {
     const familyId = await createFamily('Nguyen');
-    const postId = await createPost({
+    const input = {
       poster_id: 1,
       family_id: familyId,
       title: 'Pho broth',
       description: 'Simmer bones 6 hours',
       file: null,
       category: 'recipe'
-    });
+    };
+    const postId = await createPost(input);
     const row = await db.posts.get(postId);
-    assertEqual(row.title, 'Pho broth', 'title');
-    assertEqual(row.category, 'recipe', 'category');
-    assert(Array.isArray(row.tags) && row.tags.length === 0, 'tags defaults to []');
-    assert(Array.isArray(row.mentioned) && row.mentioned.length === 0, 'mentioned defaults to []');
-    assert(Array.isArray(row.liked_by) && row.liked_by.length === 0, 'liked_by defaults to []');
-    assertEqual(row.adapted_from, null, 'adapted_from defaults to null');
-    assertEqual(row.is_published, false, 'is_published defaults to false');
-    assert(row.created_at instanceof Date, 'created_at is a Date');
+    return {
+      input,
+      expected: {
+        title: 'Pho broth', category: 'recipe',
+        tags: [], mentioned: [], liked_by: [],
+        adapted_from: null, is_published: false, createdAtIsDate: true
+      },
+      actual: {
+        title: row.title, category: row.category,
+        tags: row.tags, mentioned: row.mentioned, liked_by: row.liked_by,
+        adapted_from: row.adapted_from, is_published: row.is_published,
+        createdAtIsDate: row.created_at instanceof Date
+      }
+    };
   });
 
   await test('getFamilyPosts returns only that family\'s posts', async () => {
     const a = await createFamily('Nguyen');
     const b = await createFamily('Okafor');
-    await createPost({ poster_id: 1, family_id: a, title: 'A1', description: '', file: null, category: 'recipe' });
-    await createPost({ poster_id: 1, family_id: a, title: 'A2', description: '', file: null, category: 'story' });
-    await createPost({ poster_id: 2, family_id: b, title: 'B1', description: '', file: null, category: 'remedy' });
-
+    const input = {
+      familyA_id: a,
+      familyB_id: b,
+      posts: [
+        { title: 'A1', family_id: a, category: 'recipe' },
+        { title: 'A2', family_id: a, category: 'story' },
+        { title: 'B1', family_id: b, category: 'remedy' }
+      ],
+      query: { family_id: a }
+    };
+    for (const p of input.posts) {
+      await createPost({ poster_id: 1, family_id: p.family_id, title: p.title, description: '', file: null, category: p.category });
+    }
     const posts = await getFamilyPosts(a);
-    assertEqual(posts.length, 2, 'family A post count');
-    assert(posts.every(p => p.family_id === a), 'all belong to family A');
+    return {
+      input,
+      expected: { count: 2, allInFamilyA: true },
+      actual: { count: posts.length, allInFamilyA: posts.every(p => p.family_id === a) }
+    };
   });
 
   await test('publishPost flips is_published and getPublishedPosts picks it up', async () => {
     const familyId = await createFamily('Nguyen');
     const draftId = await createPost({ poster_id: 1, family_id: familyId, title: 'Draft', description: '', file: null, category: 'recipe' });
     const publishedId = await createPost({ poster_id: 1, family_id: familyId, title: 'Live', description: '', file: null, category: 'recipe' });
+    const input = { posts: { draftId, publishedId }, action: `publishPost(${publishedId})` };
 
     await publishPost(publishedId);
-
     const published = await getPublishedPosts();
-    assertEqual(published.length, 1, 'exactly one published post');
-    assertEqual(published[0].post_id, publishedId, 'the published one is returned');
-    assert(!published.some(p => p.post_id === draftId), 'draft is not returned');
+    return {
+      input,
+      expected: { publishedCount: 1, returnedId: publishedId, draftExcluded: true },
+      actual: {
+        publishedCount: published.length,
+        returnedId: published[0] ? published[0].post_id : null,
+        draftExcluded: !published.some(p => p.post_id === draftId)
+      }
+    };
   });
 
   await test('getLineage walks adapted_from back to the original', async () => {
@@ -175,38 +254,70 @@ async function postTests() {
     const gen1 = await createPost({ poster_id: 1, family_id: familyId, title: 'Grandma pho', description: '', file: null, category: 'recipe' });
     const gen2 = await createPost({ poster_id: 2, family_id: familyId, title: 'Mum pho', description: '', file: null, category: 'recipe', adapted_from: gen1 });
     const gen3 = await createPost({ poster_id: 3, family_id: familyId, title: 'My pho', description: '', file: null, category: 'recipe', adapted_from: gen2 });
+    const input = { chain: { gen1, gen2, gen3 }, query: `getLineage(${gen3})` };
 
-    const chain = await getLineage(gen3);
-    assertEqual(chain.length, 3, 'three posts in the chain');
-    assertEqual(chain[0].post_id, gen3, 'starts at the requested post');
-    assertEqual(chain[chain.length - 1].post_id, gen1, 'ends at the original');
+    const result = await getLineage(gen3);
+    return {
+      input,
+      expected: { length: 3, firstId: gen3, lastId: gen1 },
+      actual: {
+        length: result.length,
+        firstId: result[0] ? result[0].post_id : null,
+        lastId: result.length ? result[result.length - 1].post_id : null
+      }
+    };
   });
 
   await test('getLineage returns a single-item chain for an original post', async () => {
     const familyId = await createFamily('Nguyen');
     const gen1 = await createPost({ poster_id: 1, family_id: familyId, title: 'Original', description: '', file: null, category: 'recipe' });
-    const chain = await getLineage(gen1);
-    assertEqual(chain.length, 1, 'chain length');
-    assertEqual(chain[0].post_id, gen1, 'the post itself');
+    const input = { post: { gen1 }, query: `getLineage(${gen1})` };
+
+    const result = await getLineage(gen1);
+    return {
+      input,
+      expected: { length: 1, firstId: gen1 },
+      actual: { length: result.length, firstId: result[0] ? result[0].post_id : null }
+    };
   });
 
   await test('getRelatedPosts returns posts sharing a tag, excluding itself', async () => {
     const familyId = await createFamily('Nguyen');
     const base = await createPost({ poster_id: 1, family_id: familyId, title: 'Base', description: '', file: null, category: 'recipe', tags: ['soup', 'vietnamese'] });
     const shares = await createPost({ poster_id: 2, family_id: familyId, title: 'Shares soup', description: '', file: null, category: 'recipe', tags: ['soup', 'korean'] });
-    await createPost({ poster_id: 3, family_id: familyId, title: 'Unrelated', description: '', file: null, category: 'story', tags: ['music'] });
+    const unrelated = await createPost({ poster_id: 3, family_id: familyId, title: 'Unrelated', description: '', file: null, category: 'story', tags: ['music'] });
+    const input = {
+      posts: {
+        base: { id: base, tags: ['soup', 'vietnamese'] },
+        shares: { id: shares, tags: ['soup', 'korean'] },
+        unrelated: { id: unrelated, tags: ['music'] }
+      },
+      query: `getRelatedPosts(${base})`
+    };
 
     const related = await getRelatedPosts(base);
-    assertEqual(related.length, 1, 'one related post');
-    assertEqual(related[0].post_id, shares, 'the tag-sharing post');
-    assert(!related.some(p => p.post_id === base), 'excludes the post itself');
+    return {
+      input,
+      expected: { count: 1, relatedId: shares, excludesSelf: true },
+      actual: {
+        count: related.length,
+        relatedId: related[0] ? related[0].post_id : null,
+        excludesSelf: !related.some(p => p.post_id === base)
+      }
+    };
   });
 
   await test('getRelatedPosts returns [] for a post with no tags', async () => {
     const familyId = await createFamily('Nguyen');
     const post = await createPost({ poster_id: 1, family_id: familyId, title: 'No tags', description: '', file: null, category: 'recipe' });
+    const input = { post: { id: post, tags: [] }, query: `getRelatedPosts(${post})` };
+
     const related = await getRelatedPosts(post);
-    assert(Array.isArray(related) && related.length === 0, 'should be empty array');
+    return {
+      input,
+      expected: { isArray: true, count: 0 },
+      actual: { isArray: Array.isArray(related), count: related.length }
+    };
   });
 }
 
