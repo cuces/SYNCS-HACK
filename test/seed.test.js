@@ -131,6 +131,20 @@ async function seedTests() {
     };
   });
 
+  // ---- images: every seeded post carries a bundled /resource photo ----
+  await test('reseed() gives every post a bundled /resource image', async () => {
+    await window.showcaseSeed.clear();
+    await window.showcaseSeed.reseed();
+    const posts = await db.posts.toArray();
+    const withImage = posts.filter(p => typeof p.file === 'string' && p.file.indexOf('/resource/') === 0);
+
+    return {
+      input: {},
+      expected: { total: 11, withResourceImage: 11 },
+      actual: { total: posts.length, withResourceImage: withImage.length }
+    };
+  });
+
   // ---- ensure() only seeds an empty archive ----
   await test('ensure() seeds when empty but never on top of existing data', async () => {
     // empty -> ensure seeds it

@@ -93,4 +93,37 @@
       }
     };
   });
+
+  await test('home view returns the whole family board in allPosts (backs the search box)', async () => {
+    clearSession();
+
+    const familyId = await createFamily('Nguyen');
+    const meId = await createUser({ name: 'Ada Nguyen', family_id: familyId, email: 'ada@example.com', phone: null });
+
+    for (const title of ['Pho broth', 'Pho ga', 'Spring rolls', 'Fish sauce', 'Egg coffee']) {
+      await createPost({
+        poster_id: meId, family_id: familyId, title: title,
+        description: '', file: null, category: 'recipe', is_published: 0
+      });
+    }
+
+    localStorage.setItem('cornerStoneSession', JSON.stringify({
+      id: meId, name: 'Ada Nguyen', email: 'ada@example.com', family_id: familyId
+    }));
+
+    const view = await window.appData.loadHomeView({ limit: 4 });
+    clearSession();
+
+    // The search box does this: filter allPosts by a case-insensitive title match.
+    const hits = (view.allPosts || [])
+      .filter(function (p) { return p.title.toLowerCase().indexOf('pho') !== -1; })
+      .map(function (p) { return p.title; })
+      .sort();
+
+    return {
+      input: { query: 'pho' },
+      expected: { recentCount: 4, allCount: 5, phoMatches: ['Pho broth', 'Pho ga'] },
+      actual: { recentCount: view.recentPosts.length, allCount: (view.allPosts || []).length, phoMatches: hits }
+    };
+  });
 })();

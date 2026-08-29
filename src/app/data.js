@@ -103,8 +103,10 @@
    *     family:          { family_id, name } | null,
    *     currentUser:     { user_id, name, email, profileImage } | null,
    *     currentUserName: string | null,
-   *     recentPosts:     PostView[]   // newest first, capped
+   *     recentPosts:     PostView[]   // newest first, capped at `limit`
+   *     allPosts:        PostView[]   // the whole family board, newest first
    *   }
+   * `allPosts` backs the home search box (filter the archive by title).
    * Throws if the database is unreachable — the caller renders an error state.
    */
   async function loadHomeView(options) {
@@ -113,7 +115,7 @@
 
     const family = await getCurrentFamily();
     if (!family) {
-      return { family: null, currentUser: null, currentUserName: null, recentPosts: [] };
+      return { family: null, currentUser: null, currentUserName: null, recentPosts: [], allPosts: [] };
     }
 
     const [posts, users] = await Promise.all([
@@ -124,17 +126,17 @@
     const currentUser = await getCurrentUserRecord();
     const usersById = new Map(users.map(function (u) { return [u.user_id, u]; }));
 
-    const recentPosts = posts
+    const allPosts = posts
       .slice()
       .sort(byNewest)
-      .slice(0, limit)
       .map(function (p) { return toPostView(p, usersById); });
 
     return {
       family: { family_id: family.family_id, name: family.name },
       currentUser: currentUser,
       currentUserName: currentUser ? currentUser.name : (users.length ? users[0].name : null),
-      recentPosts: recentPosts
+      recentPosts: allPosts.slice(0, limit),
+      allPosts: allPosts
     };
   }
 

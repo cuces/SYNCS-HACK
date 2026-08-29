@@ -14,6 +14,10 @@
 //                      Australia (x2) as markers; Nepal has a country but no pin
 //                      yet; the freezer note has neither
 //
+// Every seeded post carries a bundled recipe photo (`image`, a file in
+// /resource served from the repo root), so the boards, cards, post pages and
+// graph nodes all show real imagery in the demo.
+//
 // Idempotent: ensure() seeds only when the archive is empty. reseed() forces a
 // fresh copy; clear() wipes everything.
 //
@@ -37,6 +41,7 @@
     posts: [
       {
         key: 'jiaozi', from: null, by: 2, published: true, category: 'recipe',
+        image: '/resource/dumpling1.jpg',
         country: 'China', lat: 39.9042, lng: 116.4074, // Beijing
         tags: ['chinese', 'dumpling', 'pork', 'festive'],
         title: "Popo's Lunar New Year Jiaozi",
@@ -47,6 +52,7 @@
       },
       {
         key: 'potstickers', from: 'jiaozi', by: 1, published: true, category: 'recipe',
+        image: '/resource/dumpling2.jpg',
         country: 'China', lat: 34.2655, lng: 108.9541, // Xi'an
         tags: ['chinese', 'dumpling', 'pork', 'pan-fried'],
         title: "Mum's Pan-Fried Potstickers",
@@ -57,6 +63,7 @@
       },
       {
         key: 'veg-jiaozi', from: 'jiaozi', by: 0, published: true, category: 'recipe',
+        image: '/resource/dumpling3.jpg',
         country: 'China', lat: 23.1291, lng: 113.2644, // Guangzhou
         tags: ['chinese', 'dumpling', 'vegetarian'],
         title: 'Vegetarian Jiaozi for Popo',
@@ -66,6 +73,7 @@
       },
       {
         key: 'mandu', from: 'potstickers', by: 0, published: true, category: 'recipe',
+        image: '/resource/dumpling4.jpg',
         country: 'South Korea', lat: 37.5665, lng: 126.9780, // Seoul
         tags: ['korean', 'dumpling', 'pork', 'kimchi'],
         title: 'Kimchi Mandu (from our neighbour Jisoo)',
@@ -76,6 +84,7 @@
       },
       {
         key: 'pierogi', from: 'veg-jiaozi', by: 0, published: true, category: 'recipe',
+        image: '/resource/dumpling5.jpg',
         country: 'Poland', lat: 50.0647, lng: 19.9450, // Kraków
         tags: ['polish', 'dumpling', 'vegetarian', 'potato'],
         title: 'Pierogi Ruskie, the Kraków Detour',
@@ -86,6 +95,7 @@
       },
       {
         key: 'freezer-notes', from: 'potstickers', by: 1, published: false, category: 'note',
+        image: '/resource/dumpling6.jpg',
         country: null, lat: null, lng: null,
         tags: ['dumpling', 'make-ahead'],
         title: 'Freezing Notes (keep in the family)',
@@ -96,6 +106,7 @@
       },
       {
         key: 'momo', from: 'mandu', by: 0, published: true, category: 'recipe',
+        image: '/resource/dumpling7.jpg',
         country: 'Nepal', lat: null, lng: null, // country known, exact spot not pinned
         tags: ['nepali', 'dumpling', 'pork', 'spicy'],
         title: 'Thamel Momo with Tomato Achar',
@@ -109,6 +120,7 @@
       //     give the community graph more than one tree to show. ---
       {
         key: 'flatbread-og', from: null, by: 0, published: true, category: 'recipe',
+        image: '/resource/flatbread1.jpg',
         country: 'Lebanon', lat: 33.8938, lng: 35.5018, // Beirut
         tags: ['lebanese', 'bread', 'flatbread'],
         title: "Teta's Saj Flatbread",
@@ -118,6 +130,7 @@
       },
       {
         key: 'flatbread-bbq', from: 'flatbread-og', by: 0, published: true, category: 'recipe',
+        image: '/resource/flatbread2.jpg',
         country: 'Australia', lat: -33.8688, lng: 151.2093, // Sydney
         tags: ['australian', 'bread', 'flatbread', 'weeknight'],
         title: 'Weeknight Flatbread on the BBQ',
@@ -127,6 +140,7 @@
       },
       {
         key: 'ragu-og', from: null, by: 1, published: true, category: 'recipe',
+        image: '/resource/ragu1.jpg',
         country: 'Italy', lat: 44.4949, lng: 11.3426, // Bologna
         tags: ['italian', 'pasta', 'ragu'],
         title: "Nonna Rosa's Sunday Ragù",
@@ -136,6 +150,7 @@
       },
       {
         key: 'ragu-slowcooker', from: 'ragu-og', by: 0, published: true, category: 'recipe',
+        image: '/resource/ragu2.jpg',
         country: 'Australia', lat: -37.8136, lng: 144.9631, // Melbourne
         tags: ['australian', 'pasta', 'ragu', 'slow-cooker'],
         title: 'Slow-Cooker Ragù',
@@ -166,7 +181,8 @@
         family_id: familyId,
         title: p.title,
         description: p.description,
-        file: null,
+        // `image` is a bundled photo in /resource (served from the repo root).
+        file: p.image || null,
         category: p.category,
         tags: p.tags,
         adapted_from: p.from ? idByKey[p.from] : null,

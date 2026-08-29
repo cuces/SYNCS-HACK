@@ -48,6 +48,52 @@
     container.innerHTML = posts.map(cardHtml).join('');
   }
 
+  // Wire the topbar search box to filter the family archive by memory title.
+  // Empty query -> restore the "Recently added" list; otherwise show every
+  // memory whose title contains the query (case-insensitive), from `allPosts`.
+  function setupSearch(container, view) {
+    var input = document.getElementById('homeSearch');
+    if (!input) return;
+
+    var heading = document.getElementById('recentHeading');
+    var viewAll = document.getElementById('recentViewAll');
+    var all = view.allPosts || [];
+
+    function apply() {
+      var raw = input.value.trim();
+      var q = raw.toLowerCase();
+
+      if (!q) {
+        if (heading) heading.textContent = 'Recently added';
+        if (viewAll) viewAll.hidden = false;
+        renderRecent(container, view.recentPosts);
+        return;
+      }
+
+      var matches = all.filter(function (p) {
+        return String(p.title || '').toLowerCase().indexOf(q) !== -1;
+      });
+
+      if (heading) heading.textContent = 'Results for “' + raw + '”';
+      if (viewAll) viewAll.hidden = true;
+
+      if (!matches.length) {
+        container.className = 'recent-empty';
+        container.innerHTML = ui.stateBlock(
+          ui.ICON.inbox,
+          'No memories match “' + raw + '”',
+          'Try a different title.'
+        );
+        return;
+      }
+
+      container.className = 'recent-grid';
+      container.innerHTML = matches.map(cardHtml).join('');
+    }
+
+    input.addEventListener('input', apply);
+  }
+
   function renderError(container) {
     container.className = 'recent-error';
     container.innerHTML = ui.stateBlock(
@@ -135,6 +181,7 @@
       setupProfileImageUpload(view.currentUser);
 
       renderRecent(recentEl, view.recentPosts);
+      setupSearch(recentEl, view);
     } catch (err) {
       console.error('Homepage failed to load data:', err);
       renderError(recentEl);
