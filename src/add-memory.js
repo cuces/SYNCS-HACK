@@ -23,6 +23,33 @@ const memoryTypeRadios = document.querySelectorAll('input[name="memoryType"]');
 const countrySelect = document.getElementById('country');
 const specificPlaceInput = document.getElementById('specificPlace');
 const specificCoordsInput = document.getElementById('specificCoords');
+const presetPhotosEl = document.getElementById('presetPhotos');
+
+// Bundled photos in /resource the author can attach to a memory without
+// uploading their own file. If they pick nothing (and upload nothing), one of
+// these is attached automatically on save so every memory has a picture.
+const RESOURCE_PHOTOS = [
+  '/resource/dumpling1.jpg', '/resource/dumpling2.jpg', '/resource/dumpling3.jpg',
+  '/resource/dumpling4.jpg', '/resource/dumpling5.jpg', '/resource/dumpling6.jpg',
+  '/resource/dumpling7.jpg', '/resource/flatbread1.jpg', '/resource/flatbread2.jpg',
+  '/resource/ragu1.jpg', '/resource/ragu2.jpg'
+];
+
+function photoName(src) { return String(src).split('/').pop(); }
+
+// Pick a bundled photo that suits the memory's tags, else any of them.
+function autoResourcePhoto(tags) {
+  const t = (tags || []).join(' ').toLowerCase();
+  const bucket =
+    /dumpling|jiaozi|mandu|momo|pierogi|gyoza|potsticker/.test(t)
+      ? RESOURCE_PHOTOS.filter((s) => s.indexOf('dumpling') !== -1)
+    : /bread|flatbread|roti|naan|saj|pita/.test(t)
+      ? RESOURCE_PHOTOS.filter((s) => s.indexOf('flatbread') !== -1)
+    : /pasta|ragu|ragù|noodle|sauce/.test(t)
+      ? RESOURCE_PHOTOS.filter((s) => s.indexOf('ragu') !== -1)
+      : RESOURCE_PHOTOS;
+  return bucket[Math.floor(Math.random() * bucket.length)];
+}
 
 // Fill the Country of Origin dropdown from geo.js's hand-picked table. When a
 // country is chosen we also store its rough lat/lng so the post shows up on the
@@ -86,6 +113,12 @@ function prefillFromParent(parent) {
   if (parent.place && parent.lat != null && parent.lng != null) {
     if (specificPlaceInput) specificPlaceInput.value = parent.place;
     if (specificCoordsInput) specificCoordsInput.value = parent.lat + ', ' + parent.lng;
+  }
+
+  // Start the adaptation with the parent's photo (the author can swap it).
+  if (typeof parent.file === 'string' && parent.file.trim()) {
+    uploadedImages = [{ id: Date.now() + Math.random(), src: parent.file, name: photoName(parent.file) }];
+    renderImageGallery();
   }
 
   const tags = Array.isArray(parent.tags) ? parent.tags.map((t) => String(t).toLowerCase()) : [];
@@ -176,6 +209,37 @@ function renderImageGallery() {
       renderImageGallery();
     });
   });
+
+  renderPresetPhotos();
+}
+
+// Render the bundled /resource photo thumbnails, highlighting the current pick.
+function renderPresetPhotos() {
+  if (!presetPhotosEl) return;
+  const currentSrc = uploadedImages.length ? uploadedImages[0].src : null;
+  presetPhotosEl.innerHTML = RESOURCE_PHOTOS
+    .map((src) => {
+      const on = src === currentSrc;
+      return `<button type="button" class="preset-photo${on ? ' is-selected' : ''}" ` +
+        `data-src="${src}" role="option" aria-selected="${on}" title="${photoName(src)}">` +
+        `<img src="${src}" alt="${photoName(src)}" loading="lazy"></button>`;
+    })
+    .join('');
+}
+
+if (presetPhotosEl) {
+  presetPhotosEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.preset-photo');
+    if (!btn) return;
+    e.preventDefault();
+    const src = btn.getAttribute('data-src');
+    const alreadyPicked = uploadedImages.length && uploadedImages[0].src === src;
+    // One photo per memory — picking a preset replaces any current selection.
+    uploadedImages = alreadyPicked
+      ? []
+      : [{ id: Date.now() + Math.random(), src: src, name: photoName(src) }];
+    renderImageGallery();
+  });
 }
 
 function applyFormat(command, value = null) {
@@ -261,6 +325,7 @@ function resetForm() {
   editor.innerHTML = '';
   uploadedImages = [];
   imageGallery.innerHTML = '';
+  renderPresetPhotos();
   customCuisineInput.classList.add('hidden');
   customMemoryTypeInput.classList.add('hidden');
   updateToolbarState();
@@ -372,6 +437,10 @@ form.addEventListener('submit', async (e) => {
     if (memoryType === 'custom') tagList.push(customMemoryType.toLowerCase());
     else tagList.push(memoryType.toLowerCase());
 
+    // Photo: whatever the author uploaded/picked, else auto-attach a bundled
+    // /resource photo so the new memory isn't blank on the boards.
+    const memoryPhoto = uploadedImages.length ? uploadedImages[0].src : autoResourcePhoto(tagList);
+
     const newId = await createPost({
       poster_id: posterId,
       family_id: familyId,
@@ -379,7 +448,7 @@ form.addEventListener('submit', async (e) => {
       // Stored as plain text: the board cards and the detail page both render
       // `description` as text, so keep the editor's text content, not its HTML.
       description: description,
-      file: uploadedImages.length ? uploadedImages[0].src : null,
+      file: memoryPhoto,
       tags: tagList,
       category: memoryType === 'custom' ? 'memory' : memoryType,
       is_published: visibility === 'community-wide' ? 1 : 0,
@@ -415,6 +484,7 @@ async function initAddMemoryPage() {
   handleCuisineChange();
   handleMemoryTypeChange();
   updateToolbarState();
+  renderPresetPhotos();
 
   // If this is an adaptation, load the parent memory and set the page up for it.
   if (adaptedFromId) {

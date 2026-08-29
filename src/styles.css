@@ -1061,6 +1061,19 @@ body.saved .app-content { padding-top: var(--space-10); }
 }
 .image-remove-btn:hover { background: rgba(42, 37, 31, 1); }
 
+/* ----- Preset photo picker (bundled /resource images) ----- */
+.preset-photos {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: var(--space-2);
+}
+.preset-photo {
+  padding: 0; aspect-ratio: 1; overflow: hidden; cursor: pointer;
+  background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-xs);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.preset-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.preset-photo:hover { border-color: var(--clay); }
+.preset-photo.is-selected { border-color: var(--forest); box-shadow: var(--ring); }
+
 /* ----- "Extending an existing memory" banner ----- */
 .adapting-banner {
   margin: 0 0 var(--space-8); padding: var(--space-4) var(--space-4);
