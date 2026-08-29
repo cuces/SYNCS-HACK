@@ -12,11 +12,9 @@
   var esc = ui.escapeHtml;
 
   function cardHtml(post) {
-    var label = ui.categoryLabel(post.category);
-
     var media = post.imageSrc
       ? '<img class="recent-image" src="' + esc(post.imageSrc) + '" alt="' + esc(post.title) + '">'
-      : '<div class="recent-image recent-image--placeholder" role="img" aria-label="' + esc(post.title) + '">' +
+      : '<div class="recent-image media-placeholder" role="img" aria-label="' + esc(post.title) + '">' +
           ui.categoryIcon(post.category) +
         '</div>';
 
@@ -29,7 +27,7 @@
           '<h3>' + esc(post.title) + '</h3>' +
           byLine +
           '<div class="type-row">' +
-            '<span class="type-label">' + esc(label) + '</span>' +
+            '<span class="type-label">' + esc(ui.categoryLabel(post.category)) + '</span>' +
             '<span class="type-icon">' + ui.categoryIcon(post.category) + '</span>' +
           '</div>' +
         '</div>' +
@@ -60,22 +58,18 @@
   }
 
   async function init() {
-    var familyNameEl = document.getElementById('familyName');
     var welcomeNameEl = document.getElementById('welcomeName');
-    var avatarEl = document.getElementById('avatarMonogram');
     var recentEl = document.getElementById('recentContainer');
 
     try {
       var view = await window.appData.loadHomeView({ limit: 4 });
 
-      if (view.family && view.family.name) {
-        familyNameEl.textContent = view.family.name;
-      }
-
+      ui.renderTopbar({
+        familyName: view.family && view.family.name,
+        userName: view.currentUserName
+      });
       if (view.currentUserName) {
         welcomeNameEl.textContent = ', ' + view.currentUserName;
-        avatarEl.textContent = ui.monogram(view.currentUserName);
-        avatarEl.setAttribute('aria-label', view.currentUserName + "'s profile");
       }
 
       renderRecent(recentEl, view.recentPosts);

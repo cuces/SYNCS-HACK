@@ -47,7 +47,7 @@
 
     var media = post.imageSrc
       ? '<img class="post-image" src="' + esc(post.imageSrc) + '" alt="' + esc(post.title) + '">'
-      : '<div class="post-image post-image--placeholder" role="img" aria-label="' + esc(post.title) + '">' +
+      : '<div class="post-image media-placeholder" role="img" aria-label="' + esc(post.title) + '">' +
           ui.categoryIcon(post.category) +
         '</div>';
 
@@ -117,11 +117,9 @@
   // ----- Boot ----------------------------------------------------------
 
   async function init() {
-    var topbarName = document.getElementById('familyName');
     var headingName = document.getElementById('familyHeading');
     var statsEl = document.getElementById('familyStats');
     var membersEl = document.getElementById('membersRow');
-    var avatarEl = document.getElementById('avatarMonogram');
     var gridEl = document.getElementById('familyGrid');
 
     wireFilters();
@@ -130,14 +128,9 @@
       var view = await window.appData.loadFamilyView();
 
       var name = view.family && view.family.name ? view.family.name : 'Your family';
-      topbarName.textContent = name;
+      ui.renderTopbar({ familyName: name, userName: view.currentUserName });
       headingName.textContent = name;
       statsEl.textContent = statsLine(view.stats);
-
-      if (view.currentUserName) {
-        avatarEl.textContent = ui.monogram(view.currentUserName);
-        avatarEl.setAttribute('aria-label', view.currentUserName + "'s profile");
-      }
 
       membersEl.innerHTML = view.members.map(memberHtml).join('') + INVITE_MEMBER_HTML;
 

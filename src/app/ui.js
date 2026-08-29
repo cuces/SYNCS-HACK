@@ -1,7 +1,7 @@
 // ui.js — small, framework-free view helpers shared by every page.
 //
-// No dependencies. Load before the page controllers:
-//   dexie.js -> db.js -> ui.js -> data.js -> <page>.js
+// No dependencies. Load order:
+//   dexie.js -> ../db.js -> ui.js -> data.js -> <page>.js
 //
 // Exposes a single global: `window.ui`.
 
@@ -96,6 +96,21 @@
     '</div>';
   }
 
+  // Fill in the shared topbar bits every page has: the family name in the
+  // switcher (#familyName) and the monogram avatar (#avatarMonogram).
+  // Missing values are left as the page's static fallback.
+  function renderTopbar(opts) {
+    opts = opts || {};
+    var nameEl = document.getElementById('familyName');
+    if (nameEl && opts.familyName) nameEl.textContent = opts.familyName;
+
+    var avatarEl = document.getElementById('avatarMonogram');
+    if (avatarEl && opts.userName) {
+      avatarEl.textContent = monogram(opts.userName);
+      avatarEl.setAttribute('aria-label', opts.userName + "'s profile");
+    }
+  }
+
   global.ui = {
     escapeHtml: escapeHtml,
     categoryKey: categoryKey,
@@ -106,6 +121,7 @@
     dateLabel: dateLabel,
     monogram: monogram,
     stateBlock: stateBlock,
+    renderTopbar: renderTopbar,
     ICON: MISC_ICONS
   };
 })(window);

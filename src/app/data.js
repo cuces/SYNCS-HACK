@@ -5,7 +5,8 @@
 // place the UI touches the database, so new pages can reuse it without
 // re-implementing queries.
 //
-// Load order (classic scripts): dexie.js -> db.js -> data.js -> <page>.js
+// Load order: dexie.js -> ../db.js -> ui.js -> data.js -> <page>.js
+// (db.js exposes `getFamilies`, `getFamilyPosts`, … as globals.)
 //
 // This file never writes to the database.
 
