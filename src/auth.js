@@ -45,6 +45,11 @@
     }
   }
 
+  function logoutCurrentUser() {
+    localStorage.removeItem(SESSION_KEY);
+    window.location.href = 'login.html';
+  }
+
   // Expose the auth state as a small shared API so the rest of the site can
   // resolve the logged-in user without duplicating localStorage access logic.
   function getCurrentUserEmail() {
@@ -199,6 +204,7 @@
     getCurrentUserEmail: getCurrentUserEmail,
     readUsers: readUsers,
     writeUsers: writeUsers,
-    setCurrentUser: setCurrentUser
+    setCurrentUser: setCurrentUser,
+    logoutCurrentUser: logoutCurrentUser
   };
 })();

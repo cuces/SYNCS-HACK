@@ -64,6 +64,7 @@
         <button class="icon-btn" type="button" aria-label="Notifications">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
         </button>
+        <button class="btn btn-secondary logout-btn" id="logoutBtn" type="button">Log out</button>
         <div class="avatar-monogram" id="avatarMonogram" role="img" aria-label="Profile">&nbsp;</div>
       </div>
     </header>
@@ -161,6 +162,27 @@
 <script src="../auth.js"></script>
 <script src="../app/ui.js"></script>
 <script src="../app/data.js"></script>
+<script>
+  (function () {
+    var logoutBtn = document.getElementById('logoutBtn');
+    if (!logoutBtn) return;
+
+    var auth = window.cornerStoneAuth;
+    if (!auth || !auth.getCurrentUser()) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    logoutBtn.addEventListener('click', function () {
+      if (auth && typeof auth.logoutCurrentUser === 'function') {
+        auth.logoutCurrentUser();
+      } else {
+        localStorage.removeItem('cornerStoneSession');
+        window.location.href = 'login.html';
+      }
+    });
+  })();
+</script>
 <script src="../app/home.js"></script>
 </body>
 </html>

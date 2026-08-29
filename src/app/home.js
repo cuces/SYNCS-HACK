@@ -58,6 +58,11 @@
   }
 
   async function init() {
+    if (!window.cornerStoneAuth || !window.cornerStoneAuth.getCurrentUser()) {
+      window.location.href = 'login.html';
+      return;
+    }
+
     var welcomeNameEl = document.getElementById('welcomeName');
     var recentEl = document.getElementById('recentContainer');
 
