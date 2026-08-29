@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROOTED — Add Memory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="add-memory.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="app-sidebar">
+    <div>
+      <div class="sidebar-logo">
+        ROOTED
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V13"/><path d="M12 13c0-4 3-6 7-6-1 4-3 6-7 6Z"/><path d="M12 13c0-3-2.5-5-6-5 .8 3 2.5 5 6 5Z"/></svg>
+      </div>
+      <nav class="sidebar-nav" aria-label="Primary">
+        <a href="index.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+          Home
+        </a>
+        <a href="family.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><circle cx="18" cy="8" r="2.4"/><path d="M16 21c0-2.8 1.6-4.8 4-5.6"/></svg>
+          My Family
+        </a>
+        <a href="add-memory.html" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Memory
+        </a>
+        <a href="community.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3Z"/></svg>
+          Community
+        </a>
+        <a href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4.5 8-11.2V5l-8-3-8 3v5.8C4 17.5 12 22 12 22Z"/></svg>
+          Saved
+        </a>
+      </nav>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+        Settings
+      </a>
+    </nav>
+  </aside>
+
+  <div class="app-main">
+
+    <header class="app-topbar">
+      <button class="family-switch" type="button">
+        <span id="familyName">Your family</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="topbar-right">
+        <div class="topbar-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="search" placeholder="Search memories..." aria-label="Search memories">
+        </div>
+        <button class="icon-btn" type="button" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        </button>
+        <div class="avatar-monogram" id="avatarMonogram" role="img" aria-label="Profile">&nbsp;</div>
+      </div>
+    </header>
+
+    <main class="app-content">
+      <div class="add-memory-container">
+        
+        <div class="editor-card">
+          <h1>Share a Memory</h1>
+          <p class="subtitle">Preserve your family's stories and traditions.</p>
+
+          <form id="memoryForm" class="memory-form">
+            
+            <!-- Title Section -->
+            <div class="form-section">
+              <label for="memoryTitle">Title</label>
+              <input 
+                type="text" 
+                id="memoryTitle" 
+                name="title" 
+                placeholder="Give your memory a title..." 
+                required
+              >
+            </div>
+
+            <!-- Memory Type Tags Section -->
+            <div class="form-section">
+              <label>Memory Type</label>
+              <div class="tag-grid">
+                <label class="tag-option">
+                  <input type="radio" name="memoryType" value="recipes" required>
+                  <span class="tag-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    Recipes
+                  </span>
+                </label>
+                <label class="tag-option">
+                  <input type="radio" name="memoryType" value="stories">
+                  <span class="tag-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 7H20"/></svg>
+                    Stories
+                  </span>
+                </label>
+                <label class="tag-option">
+                  <input type="radio" name="memoryType" value="skills">
+                  <span class="tag-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+                    Skills
+                  </span>
+                </label>
+                <label class="tag-option">
+                  <input type="radio" name="memoryType" value="custom">
+                  <span class="tag-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                    Custom
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Cuisine/Culture Tags Section -->
+            <div class="form-section">
+              <label>Cuisine / Culture</label>
+              <div class="tag-grid">
+                <label class="tag-option">
+                  <input type="radio" name="cuisine" value="chinese" required>
+                  <span class="tag-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                    Chinese
+                  </span>
+                </label>
+                <label class="tag-option">
+                  <input type="radio" name="cuisine" value="greek">
+                  <span class="tag-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                    Greek
+                  </span>
+                </label>
+                <label class="tag-option">
+                  <input type="radio" name="cuisine" value="korean">
+                  <span class="tag-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                    Korean
+                  </span>
+                </label>
+                <label class="tag-option">
+                  <input type="radio" name="cuisine" value="custom-cuisine">
+                  <span class="tag-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                    Custom
+                  </span>
+                </label>
+              </div>
+              <input 
+                type="text" 
+                id="customCuisine" 
+                placeholder="Enter custom cuisine..." 
+                class="custom-input hidden"
+                style="margin-top: 10px;"
+              >
+            </div>
+
+            <!-- Visibility Section -->
+            <div class="form-section">
+              <label for="visibility">Visibility</label>
+              <select id="visibility" name="visibility" required>
+                <option value="family-only">Family Only</option>
+                <option value="community-wide">Community-wide</option>
+              </select>
+            </div>
+
+            <!-- Rich Text Editor Section -->
+            <div class="form-section">
+              <label>Description</label>
+              
+              <div class="editor-toolbar">
+                <button type="button" class="toolbar-btn" id="boldBtn" title="Bold (Ctrl+B)" aria-label="Bold">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>
+                </button>
+                <button type="button" class="toolbar-btn" id="italicBtn" title="Italic (Ctrl+I)" aria-label="Italic">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 5h4M8 19h4M14 5L8 19"/></svg>
+                </button>
+                <button type="button" class="toolbar-btn" id="underlineBtn" title="Underline (Ctrl+U)" aria-label="Underline">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3M4 21h16"/></svg>
+                </button>
+                <div class="toolbar-divider"></div>
+                <button type="button" class="toolbar-btn" id="bulletBtn" title="Bullet List" aria-label="Bullet List">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="1"/><line x1="10" y1="6" x2="20" y2="6"/><circle cx="5" cy="12" r="1"/><line x1="10" y1="12" x2="20" y2="12"/><circle cx="5" cy="18" r="1"/><line x1="10" y1="18" x2="20" y2="18"/></svg>
+                </button>
+                <div class="toolbar-divider"></div>
+                <button type="button" class="toolbar-btn" id="imageBtn" title="Add Image" aria-label="Add Image">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </button>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+              </div>
+
+              <div id="editor" class="text-editor" contenteditable="true" placeholder="Write your memory here..."></div>
+              
+              <!-- Image Gallery -->
+              <div id="imageGallery" class="image-gallery"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Memory</button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+</div>
+
+<script src="add-memory.js"></script>
+</body>
+</html>
