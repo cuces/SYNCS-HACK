@@ -20,6 +20,20 @@ const customCuisineInput = document.getElementById('customCuisine');
 const customMemoryTypeInput = document.getElementById('customMemoryType');
 const cuisineRadios = document.querySelectorAll('input[name="cuisine"]');
 const memoryTypeRadios = document.querySelectorAll('input[name="memoryType"]');
+const countrySelect = document.getElementById('country');
+
+// Fill the Country of Origin dropdown from geo.js's hand-picked table. When a
+// country is chosen we also store its rough lat/lng so the post shows up on the
+// map view (map.html plots any post that has coordinates).
+function populateCountries() {
+  if (!countrySelect || typeof supportedCountries !== 'function') return;
+  for (const name of supportedCountries()) {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    countrySelect.appendChild(opt);
+  }
+}
 
 const activeFormats = { bold: false, italic: false, underline: false };
 let uploadedImages = [];
@@ -197,6 +211,8 @@ form.addEventListener('submit', async (e) => {
   const customMemoryType = memoryType === 'custom' ? customMemoryTypeInput.value.trim() : '';
   const cuisine = cuisineEl ? cuisineEl.value : '';
   const customCuisine = cuisine === 'custom-cuisine' ? customCuisineInput.value.trim() : '';
+  const country = countrySelect ? (countrySelect.value || null) : null;
+  const coords = country && typeof countryToLatLng === 'function' ? countryToLatLng(country) : null;
 
   if (!title) return showError('Please enter a title for your memory.');
   if (!memoryType) return showError('Please choose a memory type.');
@@ -230,14 +246,16 @@ form.addEventListener('submit', async (e) => {
       poster_id: posterId,
       family_id: familyId,
       title,
-      description: editor.innerHTML,
+      // Stored as plain text: the board cards and the detail page both render
+      // `description` as text, so keep the editor's text content, not its HTML.
+      description: description,
       file: uploadedImages.length ? uploadedImages[0].src : null,
       tags: tagList,
       category: memoryType === 'custom' ? 'memory' : memoryType,
       is_published: visibility === 'community-wide' ? 1 : 0,
-      country: null,
-      lat: null,
-      lng: null
+      country: country,
+      lat: coords ? coords.lat : null,
+      lng: coords ? coords.lng : null
     });
 
     showSuccess('Memory saved.');
@@ -254,6 +272,7 @@ form.addEventListener('submit', async (e) => {
 });
 
 function initAddMemoryPage() {
+  populateCountries();
   handleCuisineChange();
   handleMemoryTypeChange();
   updateToolbarState();

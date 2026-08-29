@@ -6,13 +6,13 @@
 //
 // No dependencies. Exposes a single global: `window.bookmarks`.
 //
-// Shape in storage (key "rooted.bookmarks"):
+// Shape in storage (key "cornerstone.bookmarks"):
 //   { "<post_id>": { source: "Family" | "Community", savedAt: <ms epoch> }, ... }
 
 (function (global) {
   'use strict';
 
-  var KEY = 'rooted.bookmarks';
+  var KEY = 'cornerstone.bookmarks';
 
   function readAll() {
     try {

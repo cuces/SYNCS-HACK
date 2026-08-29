@@ -1,7 +1,7 @@
 # UI IMPLEMENTATION SPECIFICATION
-## Community Archive — ROOTED
+## Community Archive — Corner Stone
 
-Build a responsive desktop web page for a cultural/family archive application called **ROOTED**.
+Build a responsive desktop web page for a cultural/family archive application called **Corner Stone**.
 
 The target design is a **14-inch MacBook Pro desktop viewport: 1512 × 982 px**.
 
@@ -271,7 +271,7 @@ Layout:
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ ROOTED    My Family    Community                 Search  Amy│
+│ Corner Stone    My Family    Community                 Search  Amy│
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -280,7 +280,7 @@ Use horizontal flexbox.
 ### Logo
 
 ```text
-ROOTED
+Corner Stone
 
 Font: Playfair Display
 Size: 26px
@@ -1214,7 +1214,7 @@ The desktop target should be pixel-accurate to the specifications above, but the
 The final page should communicate:
 
 ```text
-             ROOTED
+             Corner Stone
 
      Community Archive
 

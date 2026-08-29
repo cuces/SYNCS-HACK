@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ROOTED — Add Memory</title>
+  <title>Corner Stone — Add Memory</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
 <div class="app-shell">
@@ -15,7 +15,7 @@
   <aside class="app-sidebar">
     <div>
       <div class="sidebar-logo">
-        ROOTED
+        Corner Stone
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V13"/><path d="M12 13c0-4 3-6 7-6-1 4-3 6-7 6Z"/><path d="M12 13c0-3-2.5-5-6-5 .8 3 2.5 5 6 5Z"/></svg>
       </div>
       <nav class="sidebar-nav" aria-label="Primary">
@@ -173,6 +173,14 @@
               >
             </div>
 
+            <!-- Country of Origin Section -->
+            <div class="form-section">
+              <label for="country">Country of Origin <span class="label-hint">(optional — pins this memory on the map)</span></label>
+              <select id="country" name="country">
+                <option value="">Not specified</option>
+              </select>
+            </div>
+
             <!-- Visibility Section -->
             <div class="form-section">
               <label for="visibility">Visibility</label>
@@ -230,8 +238,8 @@
 
 <!-- Load order: Dexie -> db.js -> geo.js -> add-memory.js -->
 <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
-<script src="db.js"></script>
-<script src="geo.js"></script>
-<script src="add-memory.js"></script>
+<script src="../db.js"></script>
+<script src="../geo.js"></script>
+<script src="../add-memory.js"></script>
 </body>
 </html>

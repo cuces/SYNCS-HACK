@@ -33,7 +33,7 @@
   // ----- Rendering ----------------------------------------------------------
 
   function renderPost(post) {
-    document.title = 'ROOTED — ' + post.title;
+    document.title = 'Corner Stone — ' + post.title;
 
     // Hero image (or a category placeholder, matching the board cards).
     var img = document.getElementById('detailImage');
@@ -91,7 +91,7 @@
   }
 
   function renderMissing() {
-    document.title = 'ROOTED — Memory not found';
+    document.title = 'Corner Stone — Memory not found';
     document.getElementById('postContent').hidden = true;
     var box = document.getElementById('postState');
     box.hidden = false;
