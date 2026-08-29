@@ -101,6 +101,7 @@
    * Returns:
    *   {
    *     family:          { family_id, name } | null,
+   *     currentUser:     { user_id, name, email, profileImage } | null,
    *     currentUserName: string | null,
    *     recentPosts:     PostView[]   // newest first, capped
    *   }
@@ -112,7 +113,7 @@
 
     const family = await getCurrentFamily();
     if (!family) {
-      return { family: null, currentUserName: null, recentPosts: [] };
+      return { family: null, currentUser: null, currentUserName: null, recentPosts: [] };
     }
 
     const [posts, users] = await Promise.all([
@@ -131,6 +132,7 @@
 
     return {
       family: { family_id: family.family_id, name: family.name },
+      currentUser: currentUser,
       currentUserName: currentUser ? currentUser.name : (users.length ? users[0].name : null),
       recentPosts: recentPosts
     };

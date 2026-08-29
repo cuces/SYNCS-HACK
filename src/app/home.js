@@ -57,6 +57,60 @@
     );
   }
 
+  function setupProfileImageUpload(userRecord) {
+    var profileImageBtn = document.getElementById('profileImageBtn');
+    var profileImageInput = document.getElementById('profileImageInput');
+    var polaroidFill = document.getElementById('polaroidFill');
+
+    if (!profileImageBtn || !profileImageInput || !userRecord) return;
+
+    // Display existing profile image if available
+    if (userRecord.profileImage) {
+      var existingImg = new Image();
+      existingImg.src = userRecord.profileImage;
+      polaroidFill.innerHTML = '';
+      polaroidFill.appendChild(existingImg);
+      polaroidFill.classList.add('has-image');
+    }
+
+    // Handle button click to trigger file input
+    profileImageBtn.addEventListener('click', function () {
+      profileImageInput.click();
+    });
+
+    // Handle file selection
+    profileImageInput.addEventListener('change', function (event) {
+      var file = event.target.files[0];
+      if (!file || !file.type.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = async function (e) {
+        var dataUrl = e.target.result;
+
+        // Display the image immediately
+        polaroidFill.innerHTML = '<img src="' + esc(dataUrl) + '" alt="Profile">';
+        polaroidFill.classList.add('has-image');
+
+        // Save to database
+        try {
+          if (userRecord.user_id) {
+            await updateUserProfileImage(userRecord.user_id, dataUrl);
+          }
+        } catch (err) {
+          console.error('Failed to save profile image:', err);
+          alert('Failed to save your image. Please try again.');
+        }
+      };
+      reader.onerror = function () {
+        alert('Failed to read the image file.');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function init() {
     if (!window.cornerStoneAuth || !window.cornerStoneAuth.getCurrentUser()) {
       window.location.href = 'login.html';
@@ -76,6 +130,9 @@
       if (view.currentUserName) {
         welcomeNameEl.textContent = ', ' + view.currentUserName;
       }
+
+      // Setup profile image upload
+      setupProfileImageUpload(view.currentUser);
 
       renderRecent(recentEl, view.recentPosts);
     } catch (err) {

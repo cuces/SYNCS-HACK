@@ -19,6 +19,9 @@ db.version(1).stores({
   posts: '++post_id, poster_id, family_id, category, is_published, adapted_from, *tags, created_at'
   // *tags = multi-entry index, lets you query posts by a single tag inside the array
 });
+
+// Note: Users can store a profileImage field as a data URL (created via canvas from uploaded image).
+// This is handled by updateUserProfileImage() below.
  
 // ---------- Families ----------
 
@@ -47,6 +50,11 @@ async function getUsersByFamily(family_id) {
 // Fetches a single user by primary key. Returns undefined when not found.
 async function getUserById(user_id) {
   return db.users.get(user_id);
+}
+
+// Updates a user's profile image. Stores as a data URL (base64 encoded).
+async function updateUserProfileImage(user_id, imageDataUrl) {
+  return db.users.update(user_id, { profileImage: imageDataUrl });
 }
 
 // Returns every user record. Used by the community board, which shows posts

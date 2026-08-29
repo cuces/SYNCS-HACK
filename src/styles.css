@@ -491,6 +491,16 @@ h1, h2, h3, h4 { font-weight: 500; }
   color: var(--tan); opacity: 0.7; pointer-events: none;
 }
 .polaroid-wrap { position: relative; flex-shrink: 0; margin-right: -4px; }
+.polaroid-button {
+  background: none; border: none; padding: 0; cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.polaroid-button:hover {
+  transform: rotate(2deg) scale(1.02);
+}
+.polaroid-button:active {
+  transform: rotate(2deg) scale(0.98);
+}
 .polaroid {
   width: 196px; background: #FFFDF8; padding: 10px 10px 28px;
   border-radius: 2px; box-shadow: var(--shadow-md);
@@ -500,6 +510,13 @@ h1, h2, h3, h4 { font-weight: 500; }
   width: 100%; height: 136px;
   background: repeating-linear-gradient(45deg, #E9E0CE, #E9E0CE 10px, #E4DAC1 10px, #E4DAC1 20px);
   display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+}
+.polaroid-fill.has-image {
+  background: none;
+}
+.polaroid-fill img {
+  width: 100%; height: 100%; object-fit: cover;
 }
 .polaroid-fill svg { width: 32px; height: 32px; color: var(--tan); }
 .tape {
