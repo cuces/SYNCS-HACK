@@ -12,10 +12,12 @@
 
   var esc = ui.escapeHtml;
 
-  // Culture chips shown up front, plus an overflow set behind "More". These are
-  // presentational — a post whose culture isn't listed still shows under "All".
+  // Culture chips shown up front. These are presentational — a post whose
+  // culture isn't listed still shows under "All". Anything else that actually
+  // appears on a published post is surfaced through the "Custom cultures"
+  // dropdown (built at load time from the posts themselves — see init()).
   var CULTURES = ['All', 'Korean', 'Chinese', 'Vietnamese', 'Greek', 'Indian', 'Filipino', 'Lebanese'];
-  var MORE_CULTURES = ['Japanese', 'Mexican', 'Ethiopian', 'Polish', 'Italian', 'Irish'];
+  var customCultures = []; // populated from ITEMS once the archive has loaded
 
   // Category rail. `key` is matched against each post's bucket (see bucketFor).
   var CATEGORY_ICONS = {
@@ -105,33 +107,43 @@
       cultureListEl.appendChild(li);
     });
 
-    var moreLi = document.createElement('li');
-    moreLi.style.position = 'relative';
-    var moreBtn = document.createElement('button');
-    moreBtn.className = 'culture-chip more-chip';
-    moreBtn.type = 'button';
-    moreBtn.innerHTML = 'More <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
-    var dropdown = document.createElement('div');
-    dropdown.className = 'more-dropdown';
-    MORE_CULTURES.forEach(function (c) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = c;
-      b.addEventListener('click', function (e) {
-        e.stopPropagation();
-        state.culture = c; state.visible = PAGE_SIZE;
-        dropdown.classList.remove('open');
-        renderCultureList(); renderAll();
+    // "Custom cultures" dropdown — cultures that appear on a published post but
+    // aren't one of the fixed chips above. Hidden entirely when there are none.
+    if (customCultures.length) {
+      var moreLi = document.createElement('li');
+      moreLi.style.position = 'relative';
+
+      var activeCustom = customCultures.indexOf(state.culture) !== -1 ? state.culture : null;
+
+      var moreBtn = document.createElement('button');
+      moreBtn.className = 'culture-chip more-chip';
+      moreBtn.type = 'button';
+      moreBtn.setAttribute('aria-pressed', String(!!activeCustom));
+      moreBtn.innerHTML = esc(activeCustom || 'Custom cultures') +
+        ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+
+      var dropdown = document.createElement('div');
+      dropdown.className = 'more-dropdown';
+      customCultures.forEach(function (c) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = c;
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          state.culture = c; state.visible = PAGE_SIZE;
+          dropdown.classList.remove('open');
+          renderCultureList(); renderAll();
+        });
+        dropdown.appendChild(b);
       });
-      dropdown.appendChild(b);
-    });
-    moreBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      dropdown.classList.toggle('open');
-    });
-    moreLi.appendChild(moreBtn);
-    moreLi.appendChild(dropdown);
-    cultureListEl.appendChild(moreLi);
+      moreBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+      });
+      moreLi.appendChild(moreBtn);
+      moreLi.appendChild(dropdown);
+      cultureListEl.appendChild(moreLi);
+    }
   }
   document.addEventListener('click', function () {
     var open = document.querySelectorAll('.more-dropdown.open');
@@ -278,6 +290,17 @@
     try {
       var view = await window.appData.loadCommunityView();
       ITEMS = view.posts.map(toItem);
+
+      // Build the "Custom cultures" list from cultures on real posts that
+      // aren't already one of the fixed chips, then rebuild the rail.
+      var seen = {};
+      ITEMS.forEach(function (item) {
+        var c = (item.culture || '').trim();
+        if (c && CULTURES.indexOf(c) === -1) seen[c] = true;
+      });
+      customCultures = Object.keys(seen).sort();
+      renderCultureList();
+
       renderAll();
     } catch (err) {
       console.error('Community archive failed to load:', err);
