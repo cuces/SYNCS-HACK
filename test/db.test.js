@@ -463,5 +463,6 @@ async function fullTreeTests() {
   await postTests();
   await fullTreeTests();
   if (typeof treeRendererTests === 'function') await treeRendererTests();
+  if (typeof seedTests === 'function') await seedTests();
   renderReport();
 })();

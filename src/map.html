@@ -9,10 +9,9 @@
   The plotting itself lives in mapView.js (plotTreeOnMap) so it can be unit
   tested — see test/map.test.html.
 
-  STANDALONE DEMO: opened on its own, this page seeds a small demo lineage
-  (Vietnam → Mexico → France, plus one post with no location) so there is
-  something to look at. Delete seedDemoData()/the call to it once map.html is
-  wired into the real app and getFullTree() has real data to walk.
+  Data: shows the lineage for ?root=<post_id> when given (post.html passes the
+  memory being viewed). Opened on its own it falls back to the showcase seed
+  (seed.js), which populates the Chen family dumpling lineage the first time.
 
   Note: Leaflet's map tiles come from OpenStreetMap, so this one view needs
   internet access even though the rest of the app is offline.
@@ -160,6 +159,7 @@
   <script src="treeToHtml.js"></script>
   <script src="geo.js"></script>
   <script src="db.js"></script>
+  <script src="seed.js"></script>
   <script src="mapView.js"></script>
 
   <script>
@@ -282,44 +282,6 @@
       applyFiltersAndRender();
     });
 
-    // ---------- STANDALONE DEMO DATA ----------
-
-    // Seeds a small lineage so the map has something to show when the archive
-    // is otherwise empty. Only ever called when db.posts is empty (see boot),
-    // so it never touches real data.
-    //
-    //   Vietnam ──▶ Mexico ──▶ France
-    //      └──▶ (a post with NO location)
-    //
-    async function seedDemoData() {
-      const familyId = await createFamily("Demo Family");
-
-      const make = (title, country, tags, adapted_from = null) => {
-        const c = countryToLatLng(country); // country → lat/lng, exactly what the form will do
-        return createPost({
-          poster_id: 1,
-          family_id: familyId,
-          title,
-          description: "",
-          file: null,
-          category: "recipe",
-          tags,
-          adapted_from,
-          is_published: true,
-          country: country || null,
-          lat: c ? c.lat : null,
-          lng: c ? c.lng : null,
-        });
-      };
-
-      const vietnam = await make("Phở (grandmother's original)", "Vietnam", ["vietnamese", "soup"]);
-      const mexico = await make("Phở-style caldo", "Mexico", ["mexican", "soup"], vietnam);
-      await make("Pot-au-phở", "France", ["french", "stew"], mexico);
-      await make("Aunt's handwritten note (no country given)", null, ["vietnamese", "note"], vietnam);
-
-      return vietnam; // the root of the tree
-    }
-
     // ---------- Toggle + boot ----------
 
     const toggleBtn = document.getElementById("toggle-view-btn");
@@ -331,13 +293,16 @@
 
     // Resolve which post's lineage to show:
     //   1. ?root=<post_id> on the URL (post.html passes the memory being viewed)
-    //   2. otherwise the first published post
-    //   3. otherwise seed demo data (only when the archive is completely empty)
+    //   2. the showcase seed's root (seeds the demo data if the archive is empty)
+    //   3. otherwise the first published / any post
     async function resolveRootId() {
       const requested = Number(new URLSearchParams(location.search).get("root"));
       if (requested && (await db.posts.get(requested))) return requested;
 
-      if ((await db.posts.count()) === 0) return seedDemoData();
+      if (window.showcaseSeed) {
+        const r = await window.showcaseSeed.ensure();
+        if (r && r.rootPostId) return r.rootPostId;
+      }
 
       const published = await getPublishedPosts();
       if (published.length) return published[0].post_id;

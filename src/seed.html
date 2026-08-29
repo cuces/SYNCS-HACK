@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ROOTED — Demo data</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: #f7f3eb; color: #29241f; }
+  main { max-width: 620px; margin: 0 auto; padding: 48px 20px; }
+  h1 { font-family: Georgia, serif; font-size: 1.5rem; margin: 0 0 4px; }
+  p.lede { color: #6f6656; margin: 0 0 28px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+  button {
+    font: inherit; padding: 10px 16px; border-radius: 8px; cursor: pointer;
+    border: 1px solid #cbb89a; background: #fff; color: #6d5b45;
+  }
+  button.primary { background: #557c5e; border-color: #557c5e; color: #f7f3ea; }
+  button:hover { filter: brightness(0.97); }
+  #status {
+    white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 0.85rem;
+    background: #fff; border: 1px solid #e4ddcc; border-radius: 10px; padding: 14px; min-height: 3.5rem;
+  }
+  ul.links { list-style: none; padding: 0; margin: 24px 0 0; display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  ul.links a { color: #557c5e; font-weight: 600; text-decoration: none; }
+  ul.links a:hover { text-decoration: underline; }
+  table { border-collapse: collapse; width: 100%; margin-top: 16px; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e4ddcc; }
+  th { color: #6f6656; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Demo data</h1>
+  <p class="lede">Load the showcase archive — the Chen family dumpling lineage — before demoing.</p>
+
+  <div class="row">
+    <button class="primary" id="loadBtn">Load showcase data</button>
+    <button id="reseedBtn">Wipe &amp; reload</button>
+    <button id="clearBtn">Clear database</button>
+    <button id="refreshBtn">Refresh status</button>
+  </div>
+
+  <div id="status">…</div>
+
+  <table id="preview" hidden>
+    <thead><tr><th>Memory</th><th>Country</th><th>Tags</th><th>Public</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <ul class="links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="family.html">Family board</a></li>
+    <li><a href="community.html">Community</a></li>
+    <li><a href="map.html">Map &amp; graph</a></li>
+    <li><a href="saved.html">Saved</a></li>
+  </ul>
+</main>
+
+<script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
+<script src="db.js"></script>
+<script src="seed.js"></script>
+<script>
+  const statusEl = document.getElementById('status');
+  const preview = document.getElementById('preview');
+  const tbody = preview.querySelector('tbody');
+
+  async function refresh() {
+    const [families, users, posts, published] = await Promise.all([
+      db.families.count(), db.users.count(), db.posts.count(), getPublishedPosts()
+    ]);
+    statusEl.textContent =
+      `Families:  ${families}\n` +
+      `Users:     ${users}\n` +
+      `Memories:  ${posts}  (${published.length} public, ${posts - published.length} private)`;
+
+    if (posts === 0) { preview.hidden = true; return; }
+    const rows = await db.posts.orderBy('post_id').toArray();
+    tbody.innerHTML = rows.map(p =>
+      `<tr><td>${p.title}</td><td>${p.country || '—'}</td><td>${(p.tags || []).join(', ')}</td><td>${p.is_published === 1 ? 'yes' : 'no'}</td></tr>`
+    ).join('');
+    preview.hidden = false;
+  }
+
+  async function run(label, fn) {
+    statusEl.textContent = label + '…';
+    try { await fn(); await refresh(); }
+    catch (e) { statusEl.textContent = 'Error: ' + (e && e.message ? e.message : e); }
+  }
+
+  document.getElementById('loadBtn').addEventListener('click', () =>
+    run('Loading showcase data', () => window.showcaseSeed.ensure()));
+  document.getElementById('reseedBtn').addEventListener('click', () =>
+    run('Wiping and reloading', () => window.showcaseSeed.reseed()));
+  document.getElementById('clearBtn').addEventListener('click', () =>
+    run('Clearing database', () => window.showcaseSeed.clear()));
+  document.getElementById('refreshBtn').addEventListener('click', () => run('Refreshing', async () => {}));
+
+  refresh();
+</script>
+</body>
+</html>

@@ -13,6 +13,14 @@
 (function (global) {
   'use strict';
 
+  // When seed.js is present (the demo build), make sure the showcase data has
+  // been written before any page reads from the database. No-op otherwise.
+  async function ready() {
+    if (global.showcaseSeed && typeof global.showcaseSeed.ensure === 'function') {
+      try { await global.showcaseSeed.ensure(); } catch (e) { /* page shows its own empty state */ }
+    }
+  }
+
   // No authentication exists yet, so "the current family" is simply the first
   // family record in the store. When auth is added, resolve it here instead.
   async function getCurrentFamily() {
@@ -62,6 +70,7 @@
    */
   async function loadHomeView(options) {
     const limit = (options && options.limit) || 4;
+    await ready();
 
     const family = await getCurrentFamily();
     if (!family) {
@@ -101,6 +110,7 @@
    * Throws if the database is unreachable — the caller renders an error state.
    */
   async function loadFamilyView() {
+    await ready();
     const family = await getCurrentFamily();
     if (!family) {
       return {
@@ -159,6 +169,7 @@
   async function loadPostView(postId) {
     const id = Number(postId);
     if (!id || Number.isNaN(id)) return null;
+    await ready();
 
     const post = await getPostById(id);
     if (!post) return null;
@@ -188,6 +199,7 @@
    * Throws if the database is unreachable — the caller renders an error state.
    */
   async function loadCommunityView() {
+    await ready();
     const [posts, users, families] = await Promise.all([
       getPublishedPosts(),
       getAllUsers(),
@@ -226,6 +238,7 @@
    * Throws if the database is unreachable — the caller renders an error state.
    */
   async function loadSavedView(entries) {
+    await ready();
     const list = Array.isArray(entries) ? entries : [];
     const ids = list.map(function (e) { return Number(e.id); }).filter(Boolean);
     if (!ids.length) return { items: [] };
