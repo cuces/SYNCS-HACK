@@ -22,8 +22,13 @@ const imageInput = document.getElementById('imageInput');
 const imageGallery = document.getElementById('imageGallery');
 const cancelBtn = document.getElementById('cancelBtn');
 const customCuisineInput = document.getElementById('customCuisine');
+const customMemoryTypeInput = document.getElementById('customMemoryType');
 const cuisineRadios = document.querySelectorAll('input[name="cuisine"]');
+<<<<<<< HEAD
 const countrySelect = document.getElementById('country');
+=======
+const memoryTypeRadios = document.querySelectorAll('input[name="memoryType"]');
+>>>>>>> a1e3e08 (changed stories icon and custom memory type)
 
 // Track active formatting states
 const activeFormats = { bold: false, italic: false, underline: false };
@@ -52,6 +57,27 @@ function handleCuisineChange() {
   }
 }
 cuisineRadios.forEach((radio) => radio.addEventListener('change', handleCuisineChange));
+
+// ============================================
+// CUSTOM MEMORY TYPE HANDLING
+// ============================================
+
+/**
+ * Toggle custom memory type input visibility
+ */
+function handleMemoryTypeChange() {
+  const customMemoryTypeRadio = document.querySelector('input[name="memoryType"][value="custom"]');
+  if (customMemoryTypeRadio.checked) {
+    customMemoryTypeInput.classList.remove('hidden');
+    customMemoryTypeInput.focus();
+  } else {
+    customMemoryTypeInput.classList.add('hidden');
+  }
+}
+
+memoryTypeRadios.forEach(radio => {
+  radio.addEventListener('change', handleMemoryTypeChange);
+});
 
 // ============================================
 // IMAGE HANDLING
@@ -150,10 +176,78 @@ async function resolveContext() {
 // ============================================
 // FORM SUBMISSION
 // ============================================
+<<<<<<< HEAD
+=======
+
+/**
+ * Save memory to IndexedDB
+ */
+async function saveMemory(data) {
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction(['posts'], 'readwrite');
+    const store = tx.objectStore('posts');
+
+    const memory = {
+      id: Date.now(),
+      title: data.title,
+      content: data.content,
+      memoryType: data.memoryType,
+      customMemoryType: data.customMemoryType || null,
+      cuisine: data.cuisine,
+      customCuisine: data.customCuisine || null,
+      visibility: data.visibility,
+      images: data.images,
+      createdAt: new Date().toISOString(),
+      published: true,
+      familyId: 'default' // TODO: Get from family context
+    };
+
+    await store.add(memory);
+    await tx.done;
+
+    console.log('Memory saved:', memory);
+    showSuccessMessage('Memory saved successfully!');
+    resetForm();
+    
+    // Redirect to home after 1.5 seconds
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 1500);
+  } catch (error) {
+    console.error('Error saving memory:', error);
+    showErrorMessage('Failed to save memory. Please try again.');
+  }
+}
+
+/**
+ * Open IndexedDB connection
+ */
+function openDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('RootedDB', 1);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('posts')) {
+        db.createObjectStore('posts', { keyPath: 'id' });
+      }
+    };
+  });
+}
+
+/**
+ * Handle form submission
+ */
+>>>>>>> a1e3e08 (changed stories icon and custom memory type)
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const title = document.getElementById('memoryTitle').value.trim();
+<<<<<<< HEAD
   // Store the description as plain text — the board and detail pages render it
   // as text, so keeping HTML out avoids escaping surprises.
   const description = (editor.innerText || '').trim();
@@ -162,6 +256,13 @@ form.addEventListener('submit', async (e) => {
   const memoryType = memoryTypeEl ? memoryTypeEl.value : '';
   const cuisine = cuisineEl ? cuisineEl.value : '';
   const customCuisine = cuisine === 'custom-cuisine' ? customCuisineInput.value.trim() : '';
+=======
+  const content = editor.innerHTML;
+  const memoryType = document.querySelector('input[name="memoryType"]:checked').value;
+  const customMemoryType = memoryType === 'custom' ? customMemoryTypeInput.value.trim() : null;
+  const cuisine = document.querySelector('input[name="cuisine"]:checked').value;
+  const customCuisine = cuisine === 'custom-cuisine' ? customCuisineInput.value.trim() : null;
+>>>>>>> a1e3e08 (changed stories icon and custom memory type)
   const visibility = document.getElementById('visibility').value;
   const country = countrySelect ? countrySelect.value : '';
 
@@ -171,13 +272,61 @@ form.addEventListener('submit', async (e) => {
   if (cuisine === 'custom-cuisine' && !customCuisine) return showError('Please name the custom culture.');
   if (!description) return showError('Please write something in the description.');
 
+<<<<<<< HEAD
+=======
+  if (!content || content === '<br>') {
+    showErrorMessage('Please write something in the description.');
+    return;
+  }
+
+  if (!memoryType) {
+    showErrorMessage('Please select a memory type.');
+    return;
+  }
+
+  if (memoryType === 'custom' && !customMemoryType) {
+    showErrorMessage('Please enter a custom memory type.');
+    return;
+  }
+
+  if (!cuisine) {
+    showErrorMessage('Please select a cuisine/culture.');
+    return;
+  }
+
+  if (cuisine === 'custom-cuisine' && !customCuisine) {
+    showErrorMessage('Please enter a custom cuisine name.');
+    return;
+  }
+
+  if (!visibility) {
+    showErrorMessage('Please select visibility.');
+    return;
+  }
+
+  // Show loading state
+>>>>>>> a1e3e08 (changed stories icon and custom memory type)
   const submitBtn = form.querySelector('button[type="submit"]');
   const originalText = submitBtn.textContent;
   submitBtn.disabled = true;
   submitBtn.textContent = 'Saving…';
 
+<<<<<<< HEAD
   try {
     const { familyId, posterId } = await resolveContext();
+=======
+  // Save to database
+  await saveMemory({
+    title,
+    content,
+    memoryType,
+    customMemoryType,
+    cuisine,
+    customCuisine,
+    visibility,
+    images: uploadedImages
+  });
+>>>>>>> a1e3e08 (changed stories icon and custom memory type)
 
     // Culture tag: the picked chip, or the free-text value for "Custom".
     const cultureTag = (cuisine === 'custom-cuisine' ? customCuisine : cuisine).toLowerCase();
@@ -210,9 +359,24 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
+<<<<<<< HEAD
 cancelBtn.addEventListener('click', () => {
   if (confirm('Discard this memory?')) window.location.href = 'family.html';
 });
+=======
+/**
+ * Reset form fields
+ */
+function resetForm() {
+  form.reset();
+  editor.innerHTML = '';
+  uploadedImages = [];
+  imageGallery.innerHTML = '';
+  customCuisineInput.classList.add('hidden');
+  customMemoryTypeInput.classList.add('hidden');
+  updateToolbarState();
+}
+>>>>>>> a1e3e08 (changed stories icon and custom memory type)
 
 // ============================================
 // NOTIFICATIONS
