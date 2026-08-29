@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOTED — Memory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #29241F;
+  --paper: #ECE4D3;
+  --card: #F5F0E6;
+  --cream: #EFE7D8;
+  --cream-2: #E9E0CE;
+  --tan: #CBB89A;
+  --clay: #A67C52;
+  --brown: #6D5B45;
+  --forest: #557C5E;
+  --forest-dark: #44614C;
+  --border: #E4DDCC;
+  --muted: #6F6656;
+  --meta: #948A78;
+
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 44px 20px;
+}
+img { display: block; max-width: 100%; }
+button { font-family: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--forest); outline-offset: 2px; }
+ul, ol { margin: 0; padding: 0; }
+
+.card {
+  width: 100%;
+  max-width: 552px;
+  background: var(--card);
+  border-radius: 26px;
+  padding: 22px 22px 26px 22px;
+  box-shadow: 0 20px 50px rgba(41,36,31,0.10), 0 2px 8px rgba(41,36,31,0.06);
+  position: relative;
+}
+
+/* ===== Header row ===== */
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.back-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 14.5px; font-weight: 600; color: var(--ink);
+  background: none; border: none; padding: 4px 0;
+}
+.back-link svg { width: 17px; height: 17px; }
+.back-link:hover { color: var(--forest); }
+
+.menu-wrap { position: relative; }
+.menu-btn {
+  width: 32px; height: 32px; border-radius: 50%; border: none; background: none;
+  display: flex; align-items: center; justify-content: center; color: var(--ink);
+}
+.menu-btn:hover { background: rgba(41,36,31,0.06); }
+.menu-btn svg { width: 19px; height: 19px; }
+.menu-dropdown {
+  position: absolute; top: 38px; right: 0; z-index: 5;
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(41,36,31,0.14);
+  min-width: 150px; padding: 6px; display: none;
+}
+.menu-dropdown.open { display: block; }
+.menu-dropdown button {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  background: none; border: none; padding: 9px 10px; border-radius: 8px;
+  font-size: 13.5px; font-weight: 500; color: var(--ink); text-align: left;
+}
+.menu-dropdown button:hover { background: var(--cream); }
+.menu-dropdown button svg { width: 15px; height: 15px; color: var(--muted); }
+.menu-dropdown button.danger { color: #A15347; }
+.menu-dropdown button.danger svg { color: #A15347; }
+
+/* ===== Image ===== */
+.detail-image-wrap { border-radius: 18px; overflow: hidden; }
+.detail-image { width: 100%; height: 300px; object-fit: cover; display: block; }
+.detail-image.media-placeholder {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cream-2); color: var(--clay);
+}
+.detail-image.media-placeholder svg { width: 46px; height: 46px; }
+
+/* ===== Title row ===== */
+.title-row {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  margin-top: 20px;
+}
+.title-row h1 {
+  font-family: var(--font-display); font-size: 25px; font-weight: 600; color: var(--ink);
+  margin: 0; display: flex; align-items: center; gap: 9px;
+}
+.type-badge {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--cream-2); color: var(--clay);
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.type-badge svg { width: 13px; height: 13px; }
+
+.save-btn {
+  width: 34px; height: 34px; border-radius: 50%; border: none; background: none;
+  display: flex; align-items: center; justify-content: center; color: var(--ink); flex-shrink: 0;
+  margin-top: 2px;
+}
+.save-btn:hover { background: rgba(41,36,31,0.06); }
+.save-btn svg { width: 18px; height: 18px; }
+.save-btn[aria-pressed="true"] svg { fill: var(--clay); color: var(--clay); }
+
+.type-label { font-size: 13px; color: var(--meta); margin: 4px 0 0 0; }
+
+/* ===== Byline ===== */
+.byline { display: flex; align-items: center; gap: 10px; margin: 18px 0; }
+.byline .avatar-photo { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+.byline .avatar-photo img { width: 100%; height: 100%; object-fit: cover; }
+.byline .avatar-photo.monogram {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cream-2); color: var(--brown);
+  font-family: var(--font-display); font-size: 16px; font-weight: 600;
+}
+.byline .by-text { font-size: 13px; line-height: 1.4; }
+.byline .by-text strong { display: block; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.byline .by-text span { color: var(--meta); font-size: 12.5px; }
+
+/* ===== Body copy ===== */
+.description { font-size: 14.5px; line-height: 22px; color: var(--ink); margin: 0 0 22px 0; }
+
+.section-label {
+  font-size: 14px; font-weight: 600; color: var(--ink); margin: 0 0 10px 0;
+}
+.ingredients-list {
+  list-style: none; margin: 0 0 22px 0; padding: 0;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.ingredients-list li {
+  font-size: 13.5px; color: var(--brown); line-height: 1.4;
+  padding-left: 16px; position: relative;
+}
+.ingredients-list li::before {
+  content: ""; position: absolute; left: 0; top: 7px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--clay);
+}
+
+.steps-block { margin-bottom: 4px; }
+.steps-preview {
+  font-size: 13.5px; color: var(--brown); line-height: 1.5; margin: 0;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 0;
+}
+.steps-preview .step-text { color: var(--brown); }
+.steps-preview .view-all {
+  font-size: 13px; font-weight: 600; color: var(--forest); background: none; border: none; padding: 0; margin-left: 4px;
+}
+.steps-preview .view-all:hover { text-decoration: underline; }
+
+.steps-full { list-style: none; margin: 10px 0 0 0; padding: 0; display: none; flex-direction: column; gap: 9px; }
+.steps-full.open { display: flex; }
+.steps-full li {
+  font-size: 13.5px; color: var(--brown); line-height: 1.5;
+  display: flex; gap: 8px;
+}
+.steps-full li .num {
+  flex-shrink: 0; width: 19px; height: 19px; border-radius: 50%;
+  background: var(--cream-2); color: var(--clay);
+  font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+
+/* ===== Footer buttons ===== */
+.privacy-footer {
+  margin-top: 24px; padding-top: 4px;
+  display: flex; align-items: stretch; gap: 10px;
+}
+.privacy-btn {
+  height: 46px; padding: 0 16px; border-radius: 12px;
+  font-size: 13.5px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  border: 1px solid var(--border);
+}
+.privacy-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+#privacy-private { background: var(--cream); color: var(--ink); flex: 0 0 auto; }
+#privacy-public { background: var(--forest); color: #F7F3EA; border-color: var(--forest); flex: 1; }
+.privacy-btn[aria-pressed="true"] { background: var(--forest); border-color: var(--forest); color: #F7F3EA; }
+#privacy-private[aria-pressed="true"] { flex: 1; }
+#privacy-public[aria-pressed="false"] { background: var(--cream); color: var(--ink); border-color: var(--border); flex: 0 0 auto; }
+
+/* ===== Loading / missing states ===== */
+.card-note {
+  padding: 40px 10px; text-align: center;
+}
+.card-note h2 {
+  font-family: var(--font-display); font-size: 20px; font-weight: 600; margin: 0 0 8px 0; color: var(--ink);
+}
+.card-note p { font-size: 13.5px; color: var(--muted); margin: 0 0 18px 0; }
+.card-note a {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 13.5px; font-weight: 600; color: var(--forest);
+}
+[hidden] { display: none !important; }
+
+@media (max-width: 480px) {
+  body { padding: 20px 12px; }
+  .card { padding: 16px 16px 20px 16px; border-radius: 20px; }
+  .detail-image { height: 220px; }
+  .title-row h1 { font-size: 21px; }
+}
+</style>
+</head>
+<body>
+
+<div class="card" id="postCard">
+
+  <div class="card-header">
+    <a class="back-link" href="family.html" id="backLink">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to memories
+    </a>
+    <div class="menu-wrap">
+      <button class="menu-btn" type="button" id="menu-btn" aria-label="More options" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg>
+      </button>
+      <div class="menu-dropdown" id="menu-dropdown">
+        <button type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          Edit memory
+        </button>
+        <button type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Add to cookbook
+        </button>
+        <button type="button" class="danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Delete memory
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Everything below is populated from the database by app/post.js -->
+  <div id="postContent">
+
+    <div class="detail-image-wrap">
+      <img class="detail-image" id="detailImage" src="" alt="">
+    </div>
+
+    <div class="title-row">
+      <h1>
+        <span class="title-text" id="titleText">Untitled</span>
+        <span class="type-badge" id="typeBadge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3"/><path d="M8 12v9"/><path d="M17 3c-1.5 1.5-2 3-2 5s.5 3 2 4v9"/></svg>
+        </span>
+      </h1>
+      <button class="save-btn" type="button" aria-pressed="false" aria-label="Save this memory" id="save-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+    <p class="type-label" id="typeLabel">Memory</p>
+
+    <div class="byline">
+      <div class="avatar-photo monogram" id="bylineAvatar" aria-hidden="true">?</div>
+      <p class="by-text"><strong id="byName">By someone</strong><span id="byDate">Added recently</span></p>
+    </div>
+
+    <p class="description" id="description"></p>
+
+    <div class="ingredients-block" id="ingredientsBlock" hidden>
+      <p class="section-label">Ingredients</p>
+      <ul class="ingredients-list" id="ingredientsList"></ul>
+    </div>
+
+    <div class="steps-block" id="stepsBlock" hidden>
+      <p class="section-label">Steps</p>
+      <p class="steps-preview" id="steps-preview">
+        <span class="step-text" id="stepsPreviewText"></span>
+        <button class="view-all" type="button" id="view-all-btn">View all</button>
+      </p>
+      <ol class="steps-full" id="steps-full"></ol>
+    </div>
+
+    <div class="privacy-footer">
+      <button class="privacy-btn" type="button" id="privacy-private" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="1"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>
+        Private to family
+      </button>
+      <button class="privacy-btn" type="button" id="privacy-public" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3Z"/></svg>
+        Share to Community
+      </button>
+    </div>
+
+  </div>
+
+  <div id="postState" hidden></div>
+
+</div>
+
+<!-- Load order: Dexie -> db.js -> app/ui.js -> app/data.js -> page controller -->
+<script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
+<script src="db.js"></script>
+<script src="app/ui.js"></script>
+<script src="app/data.js"></script>
+<script src="app/post.js"></script>
+</body>
+</html>

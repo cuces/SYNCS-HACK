@@ -44,6 +44,11 @@ async function getUsersByFamily(family_id) {
   return db.users.where({ family_id }).toArray();
 }
 
+// Fetches a single user by primary key. Returns undefined when not found.
+async function getUserById(user_id) {
+  return db.users.get(user_id);
+}
+
 // ---------- Posts ----------
 
 // Creates a new post for a family board or community feed.
@@ -85,6 +90,11 @@ async function createPost({
 // Returns all posts for one family's private board.
 async function getFamilyPosts(family_id) {
   return db.posts.where({ family_id }).toArray();
+}
+
+// Fetches a single post by primary key. Returns undefined when not found.
+async function getPostById(post_id) {
+  return db.posts.get(post_id);
 }
 
 // Returns posts that are visible on the public community board.

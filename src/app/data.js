@@ -146,9 +146,41 @@
     };
   }
 
+  /**
+   * Data for a single post's detail page (post.html?id=<post_id>).
+   * Returns a PostView (see toPostView) extended with:
+   *   familyId:    number | null
+   *   tags:        string[]
+   *   ingredients: string[]   // not in the base schema yet — read if present
+   *   steps:       string[]   // not in the base schema yet — read if present
+   * Returns null when the id is missing/invalid or no such post exists.
+   * Throws if the database is unreachable — the caller renders an error state.
+   */
+  async function loadPostView(postId) {
+    const id = Number(postId);
+    if (!id || Number.isNaN(id)) return null;
+
+    const post = await getPostById(id);
+    if (!post) return null;
+
+    const author = post.poster_id != null ? await getUserById(post.poster_id) : null;
+    const usersById = new Map(author ? [[author.user_id, author]] : []);
+
+    const view = toPostView(post, usersById);
+    view.familyId = post.family_id != null ? post.family_id : null;
+    view.tags = Array.isArray(post.tags) ? post.tags.map(String) : [];
+    // `ingredients` / `steps` aren't persisted by the current schema. They're
+    // read opportunistically so a richer recipe post renders those sections;
+    // absent, the detail page simply hides them.
+    view.ingredients = Array.isArray(post.ingredients) ? post.ingredients.map(String) : [];
+    view.steps = Array.isArray(post.steps) ? post.steps.map(String) : [];
+    return view;
+  }
+
   global.appData = {
     getCurrentFamily: getCurrentFamily,
     loadHomeView: loadHomeView,
-    loadFamilyView: loadFamilyView
+    loadFamilyView: loadFamilyView,
+    loadPostView: loadPostView
   };
 })(window);

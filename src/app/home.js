@@ -21,7 +21,7 @@
     var byLine = post.authorName ? '<p class="by">by ' + esc(post.authorName) + '</p>' : '';
 
     return '' +
-      '<article class="recent-card">' +
+      '<a class="recent-card" href="post.html?id=' + encodeURIComponent(post.id) + '">' +
         '<div class="recent-image-wrap">' + media + '</div>' +
         '<div class="recent-caption">' +
           '<h3>' + esc(post.title) + '</h3>' +
@@ -31,7 +31,7 @@
             '<span class="type-icon">' + ui.categoryIcon(post.category) + '</span>' +
           '</div>' +
         '</div>' +
-      '</article>';
+      '</a>';
   }
 
   function renderRecent(container, posts) {

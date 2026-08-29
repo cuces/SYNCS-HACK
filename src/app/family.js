@@ -61,7 +61,7 @@
     ].join('');
 
     return '' +
-      '<article class="post-card" data-category="' + esc(key) + '">' +
+      '<a class="post-card" href="post.html?id=' + encodeURIComponent(post.id) + '" data-category="' + esc(key) + '">' +
         '<div class="post-image-wrap">' + media + badge + '</div>' +
         '<div class="post-body">' +
           '<p class="post-type">' + esc(typeLabel(post)) + '</p>' +
@@ -69,7 +69,7 @@
           (post.description ? '<p class="post-desc">' + esc(post.description) + '</p>' : '') +
           '<p class="post-foot">' + foot + '</p>' +
         '</div>' +
-      '</article>';
+      '</a>';
   }
 
   function renderGrid(container, posts) {
