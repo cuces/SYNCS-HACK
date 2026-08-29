@@ -223,7 +223,7 @@
   //   animate  — set false to skip the grow-from-root reveal (default true;
   //              also skipped when the user prefers reduced motion, or when
   //              vis has no DataSet, or there's only one node)
-  //   waveMs   — ms between each generation appearing (default 650)
+  //   waveMs   — ms between each generation appearing (default 800)
   global.enhanceGraph = function enhanceGraph(container, opts) {
     opts = opts || {};
     try {
@@ -320,37 +320,67 @@
           }
 
           // Animated reveal: the tree grows outward from the root, one BFS
-          // generation at a time, so the viewer watches the lineage connect up.
-          // Turn OFF the up-front stabilization for this network so each newly
-          // added node visibly springs out and settles in real time (that live
-          // physics IS the growth effect); we still freeze everything at the end.
+          // generation at a time. Kept deliberately gentle:
+          //   - soft physics (weak forces, heavy damping, capped velocity) so
+          //     nothing gets flung across the canvas
+          //   - each new node is seeded AT ITS PARENT'S position, so it eases
+          //     outward from where it belongs instead of flying in from (0,0)
+          //   - after every generation the camera smoothly re-fits, zooming out
+          //     as needed so the whole lineage always stays inside the frame
           const animatedOptions = Object.assign({}, options, {
-            physics: Object.assign({}, options.physics, { stabilization: false })
+            physics: {
+              enabled: true,
+              barnesHut: {
+                gravitationalConstant: -3000,
+                centralGravity: 0.12,
+                springLength: 150,
+                springConstant: 0.02,
+                avoidOverlap: 0.2,
+                damping: 0.5
+              },
+              maxVelocity: 12,
+              minVelocity: 0.6,
+              timestep: 0.3,
+              stabilization: false
+            }
           });
           const nodesDS = new DataSet([]);
           const edgesDS = new DataSet([]);
           network = new visGlobal.Network(visContainer, { nodes: nodesDS, edges: edgesDS }, animatedOptions);
           visContainer._visNetwork = network;
 
+          const fitOpts = { animation: { duration: 650, easingFunction: 'easeInOutQuad' } };
+          const gentleFit = () => { try { network.fit(fitOpts); } catch (e) {} };
+
           const waves = computeRevealWaves(allNodes, allEdges);
-          const waveMs = Math.max(16, opts.waveMs || 650);
+          const waveMs = Math.max(32, opts.waveMs || 800);
+          const endSettleMs = Math.max(400, Math.min(900, waveMs));
           let wi = 0;
           const revealNextWave = () => {
             if (wi >= waves.length) {
-              // Let the final additions settle, then lock the layout for good.
-              setTimeout(freezeLayout, Math.min(1600, waveMs * 2));
+              // Keep everything in frame, let it settle, then lock the layout.
+              setTimeout(() => { gentleFit(); setTimeout(freezeLayout, endSettleMs); }, waveMs);
               return;
             }
             const w = waves[wi++];
             try {
-              nodesDS.add(w.nodeIds.map((id) => nodeById.get(id)).filter(Boolean));
+              const parentOf = new Map(w.edges.map((e) => [e.to, e.from]));
+              let positions = {};
+              try { positions = network.getPositions ? network.getPositions() : {}; } catch (e) { positions = {}; }
+              const newNodes = w.nodeIds.map((id) => {
+                const node = Object.assign({}, nodeById.get(id));
+                const p = positions[parentOf.get(id)];
+                if (p) { node.x = p.x + (Math.random() * 40 - 20); node.y = p.y + (Math.random() * 40 - 20); }
+                return node;
+              }).filter((n) => n && n.id != null);
+              nodesDS.add(newNodes);
               edgesDS.add(w.edges);
-              // Ease the camera out to keep the whole growing tree in view.
-              network.fit({ animation: { duration: Math.round(waveMs * 0.8), easingFunction: 'easeInOutQuad' } });
+              // Re-fit once physics has had a moment to place the new nodes.
+              setTimeout(gentleFit, Math.min(waveMs * 0.6, 350));
             } catch (e) {}
             setTimeout(revealNextWave, waveMs);
           };
-          setTimeout(revealNextWave, 150); // a beat before the root appears
+          setTimeout(revealNextWave, Math.min(250, waveMs)); // a beat before the root appears
           return;
         } catch (e) {
           console.warn('vis.Network init failed, falling back to card canvas', e);

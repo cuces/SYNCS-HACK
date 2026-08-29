@@ -273,6 +273,7 @@ async function treeRendererTests() {
           this.storePositions = () => {};
           this.redraw = () => {};
           this.fit = () => {};
+          this.getPositions = () => ({});
           this.once = () => {};
         }
       };
@@ -290,8 +291,9 @@ async function treeRendererTests() {
         });
         document.body.appendChild(container);
 
-        enhanceGraph(container, { waveMs: 20 }); // fast waves for the test
-        await new Promise((r) => setTimeout(r, 500)); // 150ms + 3 waves*20ms + freeze delay
+        enhanceGraph(container, { waveMs: 40 }); // fast waves for the test
+        // 3 waves * 40ms + per-wave refit + endSettle (~400ms) + margin
+        await new Promise((r) => setTimeout(r, 1200));
 
         const firstDS = nodeDataSets[0];
         const nodesRevealed = firstDS ? firstDS.get().length : 0;
@@ -301,7 +303,7 @@ async function treeRendererTests() {
 
         container.remove();
         return {
-          input: { waveMs: 20, tree: '1 -> (2,3), 2 -> 4' },
+          input: { waveMs: 40, tree: '1 -> (2,3), 2 -> 4' },
           // 3 node-add calls + 3 edge-add calls = at least 4 (non-animated would be 2)
           expected: { allNodesRevealed: 4, revealedInMultipleBatches: true, physicsFrozen: true },
           actual: {
