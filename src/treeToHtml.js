@@ -319,26 +319,27 @@
             return;
           }
 
-          // Animated reveal: the tree grows outward from the root, one BFS
-          // generation at a time. Kept deliberately gentle:
-          //   - soft physics (weak forces, heavy damping, capped velocity) so
-          //     nothing gets flung across the canvas
-          //   - each new node is seeded AT ITS PARENT'S position, so it eases
-          //     outward from where it belongs instead of flying in from (0,0)
-          //   - after every generation the camera smoothly re-fits, zooming out
-          //     as needed so the whole lineage always stays inside the frame
+          // Animated reveal: the tree crystallises outward from the root, one
+          // BFS generation at a time.
+          //   - the root is PINNED at the origin and never moves
+          //   - before a node's children appear, that node is PINNED where it
+          //     currently sits, so the already-grown part of the tree stops
+          //     moving and only the new leaves push out
+          //   - physics is gentle (weak forces, heavy damping, capped velocity)
+          //   - the camera stays centred on the root and only ever zooms OUT,
+          //     so the whole lineage keeps to frame as it grows
           const animatedOptions = Object.assign({}, options, {
             physics: {
               enabled: true,
               barnesHut: {
                 gravitationalConstant: -3000,
-                centralGravity: 0.12,
+                centralGravity: 0.05,
                 springLength: 150,
-                springConstant: 0.02,
-                avoidOverlap: 0.2,
-                damping: 0.5
+                springConstant: 0.03,
+                avoidOverlap: 0.3,
+                damping: 0.6
               },
-              maxVelocity: 12,
+              maxVelocity: 10,
               minVelocity: 0.6,
               timestep: 0.3,
               stabilization: false
@@ -349,8 +350,38 @@
           network = new visGlobal.Network(visContainer, { nodes: nodesDS, edges: edgesDS }, animatedOptions);
           visContainer._visNetwork = network;
 
-          const fitOpts = { animation: { duration: 650, easingFunction: 'easeInOutQuad' } };
-          const gentleFit = () => { try { network.fit(fitOpts); } catch (e) {} };
+          const fitAnim = { duration: 650, easingFunction: 'easeInOutQuad' };
+
+          // Keep the root (at 0,0) dead centre and zoom out just enough to hold
+          // every node currently on screen. Never zooms past 1:1.
+          const frameOnRoot = () => {
+            try {
+              const pos = network.getPositions();
+              let maxX = 1, maxY = 1;
+              for (const id in pos) {
+                maxX = Math.max(maxX, Math.abs(pos[id].x));
+                maxY = Math.max(maxY, Math.abs(pos[id].y));
+              }
+              const pad = 140; // room for node boxes + labels
+              const w = visContainer.clientWidth || 600;
+              const h = visContainer.clientHeight || 500;
+              const scale = Math.max(0.2, Math.min(1, (w / 2) / (maxX + pad), (h / 2) / (maxY + pad)));
+              network.moveTo({ position: { x: 0, y: 0 }, scale: scale, animation: fitAnim });
+            } catch (e) {}
+          };
+
+          // Pin the given nodes at their current position so physics leaves them alone.
+          const pinNodes = (ids) => {
+            if (!ids.length) return;
+            let pos = {};
+            try { pos = network.getPositions(ids); } catch (e) { pos = {}; }
+            nodesDS.update(ids.map((id) => {
+              const p = pos[id];
+              const upd = { id: id, fixed: { x: true, y: true } };
+              if (p) { upd.x = p.x; upd.y = p.y; }
+              return upd;
+            }));
+          };
 
           const waves = computeRevealWaves(allNodes, allEdges);
           const waveMs = Math.max(32, opts.waveMs || 800);
@@ -358,25 +389,50 @@
           let wi = 0;
           const revealNextWave = () => {
             if (wi >= waves.length) {
-              // Keep everything in frame, let it settle, then lock the layout.
-              setTimeout(() => { gentleFit(); setTimeout(freezeLayout, endSettleMs); }, waveMs);
+              setTimeout(() => {
+                frameOnRoot();
+                setTimeout(() => {
+                  // Release every pin so the user can still rearrange nodes,
+                  // then kill physics for good.
+                  try {
+                    const ids = nodesDS.getIds();
+                    nodesDS.update(ids.map((id) => ({ id: id, fixed: false })));
+                  } catch (e) {}
+                  freezeLayout();
+                }, endSettleMs);
+              }, waveMs);
               return;
             }
             const w = waves[wi++];
             try {
               const parentOf = new Map(w.edges.map((e) => [e.to, e.from]));
+
+              // Pin this generation's parents in place before their children grow.
+              pinNodes([...new Set(w.edges.map((e) => e.from))]);
+
               let positions = {};
               try { positions = network.getPositions ? network.getPositions() : {}; } catch (e) { positions = {}; }
               const newNodes = w.nodeIds.map((id) => {
                 const node = Object.assign({}, nodeById.get(id));
-                const p = positions[parentOf.get(id)];
-                if (p) { node.x = p.x + (Math.random() * 40 - 20); node.y = p.y + (Math.random() * 40 - 20); }
+                const parentId = parentOf.get(id);
+                const p = parentId != null ? positions[parentId] : null;
+                if (p) {
+                  // seed the child right next to its (now fixed) parent, free to move
+                  node.x = p.x + (Math.random() * 40 - 20);
+                  node.y = p.y + (Math.random() * 40 - 20);
+                  node.fixed = false;
+                } else {
+                  // no parent = the root: pin it at the origin for the whole animation
+                  node.x = 0;
+                  node.y = 0;
+                  node.fixed = { x: true, y: true };
+                }
                 return node;
               }).filter((n) => n && n.id != null);
               nodesDS.add(newNodes);
               edgesDS.add(w.edges);
-              // Re-fit once physics has had a moment to place the new nodes.
-              setTimeout(gentleFit, Math.min(waveMs * 0.6, 350));
+              // Re-frame once physics has had a moment to place the new leaves.
+              setTimeout(frameOnRoot, Math.min(waveMs * 0.6, 350));
             } catch (e) {}
             setTimeout(revealNextWave, waveMs);
           };

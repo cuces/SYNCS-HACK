@@ -249,17 +249,35 @@ async function treeRendererTests() {
       const setOptionsCalls = [];
       const realVis = window.vis;
 
+      let unpinnedAtEnd = false;
+      let rootEverPinned = false;
+      let moveToCalls = 0;
+      const noteItem = (it) => {
+        if (!it || it.id !== 1) return;
+        if (it.fixed && it.fixed !== undefined && it.fixed !== false) rootEverPinned = true;
+        if (it.fixed === false) unpinnedAtEnd = true;
+      };
+
       function FakeDataSet(init) {
-        this._items = [];
+        this._byId = new Map();
         if (init && init.length) this.add(init);
       }
       FakeDataSet.prototype.add = function (x) {
         addCalls++;
         const arr = Array.isArray(x) ? x : [x];
-        this._items.push.apply(this._items, arr);
+        for (const item of arr) { if (item && item.id != null) this._byId.set(item.id, item); noteItem(item); }
         return arr.map((i) => i && i.id);
       };
-      FakeDataSet.prototype.get = function () { return this._items.slice(); };
+      FakeDataSet.prototype.update = function (x) {
+        const arr = Array.isArray(x) ? x : [x];
+        for (const u of arr) {
+          const cur = this._byId.get(u.id) || { id: u.id };
+          this._byId.set(u.id, Object.assign(cur, u));
+          noteItem(u);
+        }
+      };
+      FakeDataSet.prototype.get = function () { return [...this._byId.values()]; };
+      FakeDataSet.prototype.getIds = function () { return [...this._byId.keys()]; };
 
       const nodeDataSets = [];
       window.vis = {
@@ -273,6 +291,7 @@ async function treeRendererTests() {
           this.storePositions = () => {};
           this.redraw = () => {};
           this.fit = () => {};
+          this.moveTo = () => { moveToCalls++; };
           this.getPositions = () => ({});
           this.once = () => {};
         }
@@ -300,15 +319,28 @@ async function treeRendererTests() {
         const physicsFrozen = setOptionsCalls.some(
           (o) => o && o.physics && o.physics.enabled === false
         );
+        const root = firstDS && firstDS.get().find((n) => n.id === 1);
+        const rootHeldAtOrigin = !!(root && root.x === 0 && root.y === 0);
 
         container.remove();
         return {
           input: { waveMs: 40, tree: '1 -> (2,3), 2 -> 4' },
-          // 3 node-add calls + 3 edge-add calls = at least 4 (non-animated would be 2)
-          expected: { allNodesRevealed: 4, revealedInMultipleBatches: true, physicsFrozen: true },
+          expected: {
+            allNodesRevealed: 4,
+            revealedInMultipleBatches: true,   // 3 node-adds + 3 edge-adds, not one dump
+            rootPinnedDuringGrowth: true,
+            rootHeldAtOrigin: true,
+            cameraReframedEachWave: true,       // moveTo per wave keeps root centred
+            pinsReleasedAtEnd: true,
+            physicsFrozen: true
+          },
           actual: {
             allNodesRevealed: nodesRevealed,
             revealedInMultipleBatches: addCalls >= 4,
+            rootPinnedDuringGrowth: rootEverPinned,
+            rootHeldAtOrigin,
+            cameraReframedEachWave: moveToCalls >= 3,
+            pinsReleasedAtEnd: unpinnedAtEnd,
             physicsFrozen
           }
         };
