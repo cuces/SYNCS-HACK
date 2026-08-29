@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>db.js test runner</title>
+  <style>
+    /* --- Basic styling for the test report --- */
+    body { font-family: system-ui, sans-serif; margin: 2rem; background: #fafafa; color: #222; }
+    h1 { font-size: 1.25rem; }
+    #summary { font-weight: bold; margin: 1rem 0; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 0.4rem 0.6rem; margin: 0.2rem 0; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.85rem; }
+    li.pass { background: #e6f4ea; color: #1e4620; }
+    li.fail { background: #fce8e6; color: #611a15; }
+    li .err { display: block; margin-top: 0.25rem; opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <h1>db.js — database action tests</h1>
+  <div id="summary">Running…</div>
+  <ul id="results"></ul>
+
+  <!-- Dexie must load before db.js, db.js before the tests -->
+  <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
+  <script src="db.js"></script>
+  <script src="db.test.js"></script>
+</body>
+</html>
