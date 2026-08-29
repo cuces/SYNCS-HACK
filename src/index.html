@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cornerstone — Community Archive</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- NAVIGATION -->
+  <header class="navbar">
+    <div class="navbar-content">
+      <div class="navbar-left">
+        <h1 class="logo">CORNERSTONE</h1>
+        <nav class="nav-links">
+          <a href="#" class="nav-link active" data-section="community">Community</a>
+          <a href="#" class="nav-link" data-section="myfamily">My Family</a>
+        </nav>
+      </div>
+      <div class="navbar-right">
+        <div class="search-container">
+          <svg class="search-icon" width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="7.5" cy="7.5" r="6" stroke="#706D63" stroke-width="1.5" fill="none" />
+            <path d="M11.5 11.5L15 15" stroke="#706D63" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+          <input type="text" class="search-input" id="searchInput" placeholder="Search archive..." />
+        </div>
+        <span class="user-name">Amy</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ARCHIVE HEADER -->
+    <section class="archive-header">
+      <div class="archive-header-content">
+        <div class="archive-header-left">
+          <h2 class="archive-title">Community Archive</h2>
+          <p class="archive-description">Explore stories, recipes and traditions shared by families around the world.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CULTURE NAVIGATION -->
+    <nav class="culture-nav">
+      <div class="culture-nav-content">
+        <span class="culture-nav-label">EXPLORE BY CULTURE</span>
+        <div class="culture-buttons" id="cultureButtons">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN ARCHIVE LAYOUT -->
+    <section class="archive-layout">
+      <!-- CATEGORY SIDEBAR -->
+      <aside class="category-sidebar">
+        <h3 class="sidebar-heading">CATEGORIES</h3>
+        <nav class="category-list" id="categoryList">
+          <!-- Populated by JS -->
+        </nav>
+      </aside>
+
+      <!-- ARCHIVE CONTENT -->
+      <section class="archive-content">
+        <!-- SECTION HEADER -->
+        <header class="section-header" id="sectionHeader">
+          <h2 class="section-title">Community Archive</h2>
+          <p class="section-meta">24 contributions</p>
+        </header>
+
+        <!-- FEATURED MEMORY -->
+        <article class="featured-memory" id="featuredMemory">
+          <!-- Populated by JS -->
+        </article>
+
+        <!-- POST GRID -->
+        <section class="post-grid" id="postGrid">
+          <!-- Populated by JS -->
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <!-- SCRIPTS -->
+  <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
