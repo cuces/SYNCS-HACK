@@ -61,7 +61,7 @@
     ].join('');
 
     return '' +
-      '<a class="post-card" href="post.html?id=' + encodeURIComponent(post.id) + '" data-category="' + esc(key) + '">' +
+      '<a class="post-card" href="post.html?id=' + encodeURIComponent(post.id) + '&from=family" data-category="' + esc(key) + '">' +
         '<div class="post-image-wrap">' + media + badge + '</div>' +
         '<div class="post-body">' +
           '<p class="post-type">' + esc(typeLabel(post)) + '</p>' +

@@ -10,6 +10,7 @@
      6. Page — My Family       (family.html)
      7. Page — Community       (community.html)
      8. Page — Add Memory      (add-memory.html)
+     9. Page — Saved           (saved.html)
 
    Page-specific rules are prefixed with the page's block class
    (.welcome-card, .family-header, …) so they never collide.
@@ -691,4 +692,80 @@ body.community .app-content { padding: 40px 44px 72px 44px; }
   .text-editor { min-height: 200px; }
   .form-actions { flex-direction: column-reverse; }
   .form-actions .btn { width: 100%; }
+}
+
+
+/* ============================================================================
+   9. PAGE — SAVED  (saved.html)
+
+   No topbar; the header sits directly in .app-content (same as Community).
+   Reuses shared .header-search, .type-icon, .media-placeholder and .empty-state.
+   ========================================================================== */
+body.saved .app-content { padding: 40px 44px 72px 44px; }
+
+.saved-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+}
+.saved-header h1 {
+  font-family: var(--font-display); font-size: 30px; font-weight: 600; color: var(--ink); margin: 0 0 6px 0;
+}
+.saved-header p { font-size: 14px; color: var(--muted); margin: 0; max-width: 440px; }
+
+/* ----- Source tabs ----- */
+.source-tabs { margin-top: 26px; display: flex; gap: 9px; }
+.source-tab {
+  height: 40px; padding: 0 20px; border-radius: 20px; border: none;
+  background: var(--cream-2); color: var(--ink); font-family: var(--font-body); font-size: 14px; font-weight: 500;
+}
+.source-tab:hover { background: var(--tan); color: #F7F3EA; }
+.source-tab[aria-pressed="true"] { background: var(--forest); color: #F7F3EA; }
+
+.saved-meta { font-size: 12px; color: var(--meta); margin: 16px 0 0 0; }
+
+/* ----- Grid ----- */
+.saved-grid { margin-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+.saved-card { display: flex; flex-direction: column; transition: opacity .2s ease; }
+.saved-card.removing { opacity: 0; pointer-events: none; }
+.saved-image-wrap { position: relative; border-radius: 14px; overflow: hidden; }
+.saved-image { width: 100%; height: 170px; object-fit: cover; }
+.saved-image.media-placeholder { height: 170px; }
+
+.source-badge {
+  position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 7px; color: #F7F3EA;
+}
+.source-badge.family { background: rgba(85,124,94,0.88); }
+.source-badge.community { background: rgba(41,36,31,0.72); }
+
+.unsave-btn {
+  position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(247,243,234,0.92); border: none;
+  display: flex; align-items: center; justify-content: center; color: var(--clay);
+}
+.unsave-btn:hover { background: #FFFDF8; }
+.unsave-btn svg { width: 15px; height: 15px; fill: var(--clay); }
+
+.saved-caption { padding: 12px 2px 0 2px; }
+.saved-caption a.title-link h3 {
+  font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--ink); margin: 0 0 3px 0;
+}
+.saved-caption .caption-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.saved-caption .by { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+/* Shared .empty-state gets an icon on this page */
+.empty-state svg { width: 34px; height: 34px; color: var(--tan); margin-bottom: 12px; }
+
+@media (max-width: 1150px) {
+  .saved-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 800px) {
+  .saved-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  body.saved .app-content { padding: 28px 20px 56px 20px; }
+}
+@media (max-width: 550px) {
+  .saved-grid { grid-template-columns: 1fr; }
 }

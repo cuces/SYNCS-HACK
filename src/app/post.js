@@ -15,6 +15,11 @@
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
     'August', 'September', 'October', 'November', 'December'];
 
+  var params = new URLSearchParams(window.location.search);
+  // `from` (family | community) is carried on the link so the Saved page can
+  // show where a bookmark came from.
+  var currentFrom = params.get('from') === 'community' ? 'Community' : 'Family';
+
   // Date -> "12 May 2024". Empty string when the value is not a real date.
   function fullDate(d) {
     if (!(d instanceof Date) || isNaN(d.getTime())) return '';
@@ -22,7 +27,7 @@
   }
 
   function postIdFromUrl() {
-    return new URLSearchParams(window.location.search).get('id');
+    return params.get('id');
   }
 
   // ----- Rendering ----------------------------------------------------------
@@ -79,6 +84,10 @@
 
     // Privacy footer reflects the stored publish state.
     setPrivacy(post.isPublished);
+
+    // Save button reflects whether this post is already bookmarked.
+    document.getElementById('save-btn').setAttribute(
+      'aria-pressed', String(window.bookmarks.has(post.id)));
   }
 
   function renderMissing() {
@@ -114,10 +123,13 @@
   }
 
   function wireToggles() {
-    // Save / bookmark.
-    document.getElementById('save-btn').addEventListener('click', function () {
-      var pressed = this.getAttribute('aria-pressed') === 'true';
-      this.setAttribute('aria-pressed', String(!pressed));
+    // Save / bookmark — persisted per-browser via bookmarks.js.
+    var saveBtn = document.getElementById('save-btn');
+    saveBtn.addEventListener('click', function () {
+      var id = postIdFromUrl();
+      if (!id) return;
+      var nowSaved = window.bookmarks.toggle(id, currentFrom);
+      saveBtn.setAttribute('aria-pressed', String(nowSaved));
     });
 
     // Expand the full step list.

@@ -21,7 +21,7 @@
     var byLine = post.authorName ? '<p class="by">by ' + esc(post.authorName) + '</p>' : '';
 
     return '' +
-      '<a class="recent-card" href="post.html?id=' + encodeURIComponent(post.id) + '">' +
+      '<a class="recent-card" href="post.html?id=' + encodeURIComponent(post.id) + '&from=family">' +
         '<div class="recent-image-wrap">' + media + '</div>' +
         '<div class="recent-caption">' +
           '<h3>' + esc(post.title) + '</h3>' +

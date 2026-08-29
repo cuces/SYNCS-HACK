@@ -217,11 +217,55 @@
     return { posts: list };
   }
 
+  /**
+   * Data for the Saved page (saved.html).
+   * `entries` is the bookmark list from bookmarks.js: [{ id, source }], already
+   * in the order they should display. Returns { items } where each item is:
+   *   { id, title, category, source, contributor, imageSrc }
+   * Bookmarks whose post no longer exists are silently dropped.
+   * Throws if the database is unreachable — the caller renders an error state.
+   */
+  async function loadSavedView(entries) {
+    const list = Array.isArray(entries) ? entries : [];
+    const ids = list.map(function (e) { return Number(e.id); }).filter(Boolean);
+    if (!ids.length) return { items: [] };
+
+    const sourceById = new Map(list.map(function (e) { return [Number(e.id), e.source]; }));
+
+    const [posts, users, families] = await Promise.all([
+      Promise.all(ids.map(function (id) { return getPostById(id); })),
+      getAllUsers(),
+      getFamilies()
+    ]);
+
+    const usersById = new Map(users.map(function (u) { return [u.user_id, u]; }));
+    const familiesById = new Map(families.map(function (f) { return [f.family_id, f]; }));
+
+    const items = posts
+      .map(function (post) {
+        if (!post) return null; // bookmarked post was deleted
+        const view = toPostView(post, usersById);
+        const family = familiesById.get(post.family_id);
+        return {
+          id: view.id,
+          title: view.title,
+          category: view.category,
+          source: sourceById.get(view.id) === 'Community' ? 'Community' : 'Family',
+          contributor: family && family.name ? family.name : (view.authorName || null),
+          imageSrc: view.imageSrc
+        };
+      })
+      .filter(Boolean);
+
+    return { items: items };
+  }
+
   global.appData = {
     getCurrentFamily: getCurrentFamily,
     loadHomeView: loadHomeView,
     loadFamilyView: loadFamilyView,
     loadPostView: loadPostView,
-    loadCommunityView: loadCommunityView
+    loadCommunityView: loadCommunityView,
+    loadSavedView: loadSavedView
   };
 })(window);

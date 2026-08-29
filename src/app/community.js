@@ -198,7 +198,7 @@
         '<h3>' + esc(featured.title) + '</h3>' +
         '<p class="featured-tags">' + esc([featured.culture, featured.type].filter(Boolean).join(' · ')) + '</p>' +
         '<p class="excerpt">' + esc(featured.desc) + '</p>' +
-        '<a class="featured-link" href="post.html?id=' + encodeURIComponent(featured.id) + '">Read the full story ' +
+        '<a class="featured-link" href="post.html?id=' + encodeURIComponent(featured.id) + '&from=community">Read the full story ' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>' +
         '</a>' +
       '</div>';
@@ -213,7 +213,7 @@
     shown.forEach(function (item) {
       var card = document.createElement('a');
       card.className = 'archive-card';
-      card.href = 'post.html?id=' + encodeURIComponent(item.id);
+      card.href = 'post.html?id=' + encodeURIComponent(item.id) + '&from=community';
 
       var media = item.image
         ? '<img class="archive-image" src="' + esc(item.image) + '" alt="' + esc(item.title) + '">'
