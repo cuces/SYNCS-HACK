@@ -108,4 +108,48 @@ async function treeRendererTests() {
         graphic: html
       };
     });
+
+    await test('renderTreeAsHtml list-mode fallback produces nested list HTML', async () => {
+      const tree = {
+        nodes: [
+          { post_id: 101, title: 'Root item' },
+          { post_id: 102, title: 'Child A' },
+          { post_id: 103, title: 'Child B' }
+        ],
+        edges: [ { from: 101, to: 102 }, { from: 101, to: 103 } ]
+      };
+      const html = renderTreeAsHtml(tree, { mode: 'list' });
+      const hasUl = html.indexOf('<ul') !== -1;
+      const hasRoot = html.indexOf('Root item') !== -1;
+      const hasChild = html.indexOf('Child A') !== -1 && html.indexOf('Child B') !== -1;
+      return {
+        input: { tree },
+        expected: { hasUl: true, hasRoot: true, hasChild: true },
+        actual: { hasUl, hasRoot, hasChild },
+        graphic: html
+      };
+    });
+
+    await test('renderTreeAsHtml list-mode preserves parent-child structure', async () => {
+      const tree = {
+        nodes: [
+          { post_id: 201, title: 'P' },
+          { post_id: 202, title: 'C1' },
+          { post_id: 203, title: 'C2' }
+        ],
+        edges: [ { from: 201, to: 202 }, { from: 202, to: 203 } ]
+      };
+      const html = renderTreeAsHtml(tree, { mode: 'list' });
+      // Expect nested <ul> with sequential parent->child substrings
+      const parentIndex = html.indexOf('P');
+      const childIndex = html.indexOf('C1');
+      const grandchildIndex = html.indexOf('C2');
+      const nested = parentIndex !== -1 && childIndex > parentIndex && grandchildIndex > childIndex;
+      return {
+        input: { tree },
+        expected: { nested: true },
+        actual: { nested },
+        graphic: html
+      };
+    });
 }

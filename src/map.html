@@ -154,6 +154,10 @@
   <!-- Leaflet first, then Dexie + our db/geo/mapView modules -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
+  <!-- vis-network for graph rendering -->
+  <link rel="stylesheet" href="https://unpkg.com/vis-network/styles/vis-network.css" />
+  <script src="https://unpkg.com/vis-network/dist/vis-network.min.js"></script>
+  <script src="treeToHtml.js"></script>
   <script src="geo.js"></script>
   <script src="db.js"></script>
   <script src="mapView.js"></script>
@@ -330,6 +334,8 @@
       statusEl.textContent =
         `Seeded ${total} demo posts (3 with a country, 1 without).\n` +
         `Click "Show map view" — expect 3 markers and 2 connecting lines.`;
+      // Render the graph view for the seeded data
+      try { await renderGraphView(demoRootId); } catch (e) { console.warn('initial renderGraphView failed', e); }
     }
 
     const filterBar = document.getElementById("map-filters");
@@ -343,10 +349,29 @@
 
       if (showingMap) {
         await renderMapView(demoRootId); // sets the status line itself
+      } else {
+        await renderGraphView(demoRootId);
       }
     });
+    async function renderGraphView(rootId) {
+      try {
+        const tree = await getFullTree(rootId);
+        // renderTreeAsHtml returns the vis container + embedded JSON
+        graphView.innerHTML = renderTreeAsHtml(tree);
+        // attempt to enhance (initialise vis) — works if vis loaded
+        if (typeof window.enhanceGraph === 'function') {
+          try { window.enhanceGraph(graphView); } catch (e) { console.warn('enhanceGraph error', e); }
+        }
+        statusEl.textContent = `Graph: ${tree.nodes.length} nodes, ${tree.edges.length} edges.`;
+      } catch (e) {
+        console.warn('renderGraphView failed', e);
+        statusEl.textContent = 'Failed to render graph view';
+      }
+    }
 
     boot();
+    // Render graph view initially (map is hidden by default)
+    (async () => { if (demoRootId != null) await renderGraphView(demoRootId); })();
   </script>
 
 </body>

@@ -51,8 +51,10 @@
     const visEdges = (edges || []).map(e => ({ from: e.from, to: e.to }));
     // embed raw JSON inside application/json script so enhanceGraph can parse it directly
     const dataJson = '<script type="application/json" class="pt-vis-data">' + JSON.stringify({ nodes: visNodes, edges: visEdges }) + '</script>';
+    // build card HTML as a graceful fallback when vis isn't available
+    const cards = safeNodes.map(cardHtml).join('\n');
     // The vis container will be initialized by enhanceGraph when vis-network is available.
-    return '<div class="' + opts.containerClass + '">' + css + dataJson + '<div class="pt-vis" style="width:100%;height:520px;"></div></div>';
+    return '<div class="' + opts.containerClass + '">' + css + dataJson + '<div class="pt-vis" style="width:100%;height:520px;"></div><div class="pt-canvas">' + cards + '</div></div>';
   }
 
   // Backwards-compatible: renderTreeAsHtml defaults to graph mode. Pass {mode:'list'} to get list output.
@@ -104,8 +106,8 @@
         '--pt-node-font': 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial',
         '--pt-node-gap': '12px',
         '--pt-card-width': '180px',
-        '--pt-card-bg': '#fff',
-        '--pt-card-shadow': '0 6px 18px rgba(0,0,0,0.06)'
+        '--pt-card-bg': '#fffdf8',
+        '--pt-card-shadow': '0 6px 18px rgba(0,0,0,0.04)'
       },
       vars || {}
     );
@@ -122,6 +124,8 @@
       .${containerClass} .pt-card-desc { font-size: 0.9rem; color: #333; margin-bottom: 6px; }
       .${containerClass} .pt-card-date { font-size: 0.78rem; color: #666; }
       .${containerClass} .pt-empty { color: #666; font-style: italic; padding: 0.5rem 0; }
+      .${containerClass} .pt-vis { width: 100%; height: 100%; background: var(--pt-card-bg); }
+      .${containerClass} .pt-vis .vis-network { background: transparent; }
       </style>
     `;
   }
@@ -168,19 +172,63 @@
           visContainer.innerHTML = '';
         }
         const options = {
-          nodes: { shape: 'box', margin: 10 },
-          edges: { color: { color: 'rgba(0,0,0,0.6)' }, width: 2, smooth: { type: 'dynamic' } },
+          nodes: {
+            shape: 'box',
+            margin: 12,
+            widthConstraint: { maximum: 240 },
+            shapeProperties: { borderRadius: 8 },
+            font: { color: '#2f2a24' },
+            color: {
+              background: '#fffdf8',
+              border: '#e6dccf',
+              highlight: { background: '#fffef0', border: '#d7cdbf' },
+              hover: { background: '#fffef0', border: '#cfc3b6' }
+            },
+            borderWidth: 1
+          },
+          edges: {
+            color: { color: 'rgba(80,70,60,0.22)' },
+            width: 2,
+            smooth: { enabled: true, type: 'dynamic' }
+          },
           layout: { improvedLayout: true },
-          physics: { stabilization: true, barnesHut: { gravitationalConstant: -2000 } }
+          interaction: { hover: true, tooltipDelay: 200, hoverConnectedEdges: true },
+          physics: {
+            enabled: true,
+            barnesHut: {
+              gravitationalConstant: -12000,
+              centralGravity: 0.3,
+              springLength: 200,
+              springConstant: 0.04,
+              avoidOverlap: 1
+            },
+            stabilization: { iterations: 250, updateInterval: 25 }
+          }
         };
         try {
           // pass plain arrays for nodes/edges (vis accepts arrays or DataSet)
           const network = new visGlobal.Network(visContainer, { nodes: data.nodes || [], edges: data.edges || [] }, options);
           visContainer._visNetwork = network;
+          // hide the card canvas when vis is active
+          const canvas = container.querySelector('.pt-canvas');
+          if (canvas) canvas.style.display = 'none';
+          visContainer.style.display = 'block';
+          // After initial stabilization, disable physics so the graph stops moving/rotating.
+          try {
+            network.once && network.once('stabilizationIterationsDone', function () {
+              try { network.setOptions({ physics: { enabled: false } }); } catch (e) {}
+            });
+          } catch (e) {}
+          // Fallback: ensure physics is turned off shortly after render if events not fired.
+          setTimeout(() => { try { network.setOptions({ physics: { enabled: false } }); network.redraw(); } catch (e) {} }, 800);
           setTimeout(() => { try { network.redraw(); } catch (e) {} }, 150);
           return;
         } catch (e) {
-          console.warn('vis.Network init failed, falling back to SVG lines', e);
+          console.warn('vis.Network init failed, falling back to card canvas', e);
+          // ensure vis container is hidden and card canvas is visible
+          try { visContainer.style.display = 'none'; } catch (_) {}
+          const canvas = container.querySelector('.pt-canvas');
+          if (canvas) canvas.style.display = 'flex';
         }
       }
 
