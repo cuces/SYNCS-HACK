@@ -26,8 +26,8 @@ const specificCoordsInput = document.getElementById('specificCoords');
 const presetPhotosEl = document.getElementById('presetPhotos');
 
 // Bundled photos in /resource the author can attach to a memory without
-// uploading their own file. If they pick nothing (and upload nothing), one of
-// these is attached automatically on save so every memory has a picture.
+// uploading their own file. Skipping the photo entirely is fine — the memory
+// then shows the green placeholder tile (.media-placeholder) on the boards.
 const RESOURCE_PHOTOS = [
   '/resource/dumpling1.jpg', '/resource/dumpling2.jpg', '/resource/dumpling3.jpg',
   '/resource/dumpling4.jpg', '/resource/dumpling5.jpg', '/resource/dumpling6.jpg',
@@ -36,20 +36,6 @@ const RESOURCE_PHOTOS = [
 ];
 
 function photoName(src) { return String(src).split('/').pop(); }
-
-// Pick a bundled photo that suits the memory's tags, else any of them.
-function autoResourcePhoto(tags) {
-  const t = (tags || []).join(' ').toLowerCase();
-  const bucket =
-    /dumpling|jiaozi|mandu|momo|pierogi|gyoza|potsticker/.test(t)
-      ? RESOURCE_PHOTOS.filter((s) => s.indexOf('dumpling') !== -1)
-    : /bread|flatbread|roti|naan|saj|pita/.test(t)
-      ? RESOURCE_PHOTOS.filter((s) => s.indexOf('flatbread') !== -1)
-    : /pasta|ragu|ragù|noodle|sauce/.test(t)
-      ? RESOURCE_PHOTOS.filter((s) => s.indexOf('ragu') !== -1)
-      : RESOURCE_PHOTOS;
-  return bucket[Math.floor(Math.random() * bucket.length)];
-}
 
 // Fill the Country of Origin dropdown from geo.js's hand-picked table. When a
 // country is chosen we also store its rough lat/lng so the post shows up on the
@@ -437,9 +423,9 @@ form.addEventListener('submit', async (e) => {
     if (memoryType === 'custom') tagList.push(customMemoryType.toLowerCase());
     else tagList.push(memoryType.toLowerCase());
 
-    // Photo: whatever the author uploaded/picked, else auto-attach a bundled
-    // /resource photo so the new memory isn't blank on the boards.
-    const memoryPhoto = uploadedImages.length ? uploadedImages[0].src : autoResourcePhoto(tagList);
+    // Photo is optional — whatever the author uploaded or picked, else null so
+    // the card falls back to the green placeholder tile.
+    const memoryPhoto = uploadedImages.length ? uploadedImages[0].src : null;
 
     const newId = await createPost({
       poster_id: posterId,

@@ -455,9 +455,9 @@ h1, h2, h3, h4 { font-weight: 500; }
 /* ----- Media placeholder (card image slot with no photo) ----- */
 .media-placeholder {
   display: flex; align-items: center; justify-content: center;
-  background: var(--cream-2); color: var(--tan);
+  background: var(--forest); color: #F8F5EC;
 }
-.media-placeholder svg { width: 28px; height: 28px; color: var(--tan); }
+.media-placeholder svg { width: 28px; height: 28px; color: #F8F5EC; opacity: 0.8; }
 
 
 /* ============================================================================
