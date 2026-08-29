@@ -86,7 +86,7 @@ async function getPublishedPosts() {
 
 // Marks a post as published so it becomes visible to the wider community.
 async function publishPost(post_id) {
-  return db.posts.update(post_id, { is_published: true });
+  return db.posts.update(post_id, { is_published: 1 });
 }
 
 // Walks the adapted_from chain back to the original post so its ancestry can be displayed.
