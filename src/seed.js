@@ -18,10 +18,14 @@
 // Recipe posts carry a bundled photo from /resource (`image`); the non-recipe
 // memories have no photo and fall back to their category icon on the boards.
 //
-// Idempotent: ensure() seeds only when the archive is empty. reseed() forces a
-// fresh copy; clear() wipes everything.
+// Idempotent: ensure() seeds a full copy when the archive is empty, and when
+// it's already populated it tops up — healing missing/stale photos
+// (backfillImages) and inserting any showcase memories added since the archive
+// was first seeded (backfillPosts). reseed() forces a fresh copy from scratch;
+// clear() wipes everything.
 //
-// Load AFTER db.js (needs createFamily / createUser / createPost and `db`).
+// Load AFTER db.js (needs createFamily / createUser / createPost / getFamilies /
+// getUsersByFamily and `db`).
 
 (function (global) {
   'use strict';
@@ -343,6 +347,73 @@
     return updates.length;
   }
 
+  function titleForKey(key) {
+    const p = DATA.posts.find(function (x) { return x.key === key; });
+    return p ? p.title : null;
+  }
+
+  // Add any showcase memories that aren't in the archive yet — e.g. demo content
+  // shipped after the archive was first seeded. Matches by title, only touches
+  // the showcase family ("The Chen Family"), wires up adapted_from from the
+  // parent's title, and never edits or deletes an existing post.
+  async function backfillPosts() {
+    const families = await getFamilies();
+    const family = families.find(function (f) { return f.name === DATA.family; });
+    if (!family) return 0; // no showcase family -> nothing to top up
+
+    const rows = await db.posts.toArray();
+    const idByTitle = {};
+    rows.forEach(function (r) { idByTitle[r.title] = r.post_id; });
+
+    // Only top up an archive that was genuinely showcase-seeded (its root memory
+    // is present) — never dump showcase content into an unrelated archive that
+    // just happens to have a same-named family.
+    const ROOT_TITLE = "Popo's Lunar New Year Jiaozi";
+    if (idByTitle[ROOT_TITLE] == null) return 0;
+
+    // Resolve the three showcase authors, creating any that are missing.
+    const existingUsers = await getUsersByFamily(family.family_id);
+    const userIdByName = {};
+    existingUsers.forEach(function (u) { userIdByName[u.name] = u.user_id; });
+    for (const u of DATA.users) {
+      if (userIdByName[u.name] == null) {
+        userIdByName[u.name] = await createUser({
+          name: u.name, family_id: family.family_id, email: '', phone: ''
+        });
+      }
+    }
+    const fallbackPoster = existingUsers[0]
+      ? existingUsers[0].user_id
+      : userIdByName[DATA.users[0].name];
+
+    let added = 0;
+    for (const p of DATA.posts) { // DATA is parent-first, so parents resolve here
+      if (idByTitle[p.title] != null) continue;
+      const parentTitle = p.from ? titleForKey(p.from) : null;
+      const parentId = parentTitle != null && idByTitle[parentTitle] != null
+        ? idByTitle[parentTitle] : null;
+      const posterId = userIdByName[DATA.users[p.by].name] != null
+        ? userIdByName[DATA.users[p.by].name] : fallbackPoster;
+      const newId = await createPost({
+        poster_id: posterId,
+        family_id: family.family_id,
+        title: p.title,
+        description: p.description,
+        file: p.image || null,
+        category: p.category,
+        tags: p.tags,
+        adapted_from: parentId,
+        is_published: p.published ? 1 : 0,
+        country: p.country,
+        lat: p.lat,
+        lng: p.lng
+      });
+      idByTitle[p.title] = newId;
+      added++;
+    }
+    return added;
+  }
+
   // Find a good root for the lineage graph in an archive that already has data.
   async function findRoot() {
     const match = await db.posts.filter(function (p) {
@@ -361,7 +432,9 @@
       ensurePromise = (async function () {
         const count = await db.posts.count();
         if (count > 0) {
-          await backfillImages(); // heal archives seeded before posts had photos
+          // Top up an archive that was seeded before newer demo content landed.
+          await backfillImages(); // heal missing / stale photos
+          await backfillPosts();  // add showcase memories that aren't in yet
           return { seeded: false, rootPostId: await findRoot() };
         }
         return reseed();
@@ -379,6 +452,7 @@
     ensure: ensure,                 // idempotent; call from anywhere, share one run
     reseed: reseed,                 // wipe + fresh copy
     backfillImages: backfillImages, // heal photos on an already-seeded archive
+    backfillPosts: backfillPosts,   // add showcase memories missing from an archive
     clear: clear
   };
 })(window);

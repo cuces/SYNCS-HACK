@@ -187,6 +187,37 @@ async function seedTests() {
     };
   });
 
+  // ---- backfillPosts() tops up an archive missing newer showcase memories ----
+  await test('backfillPosts() adds missing showcase memories and wires their lineage', async () => {
+    await window.showcaseSeed.clear();
+    await window.showcaseSeed.reseed();
+
+    // Simulate an archive seeded before the non-recipe memories existed.
+    const stale = await db.posts
+      .filter(p => p.category !== 'recipe' && p.category !== 'note').toArray();
+    await Promise.all(stale.map(p => db.posts.delete(p.post_id)));
+    const before = await db.posts.count();
+
+    const added = await window.showcaseSeed.backfillPosts();
+    const after = await db.posts.count();
+    const againAdded = await window.showcaseSeed.backfillPosts(); // idempotent
+
+    const qRoot = await db.posts.filter(p => p.title === "Qingming: Sweeping the Ancestors' Graves").first();
+    const qSyd = await db.posts.filter(p => p.title === 'Qingming in a Sydney Backyard').first();
+
+    return {
+      input: {},
+      expected: { before: 11, added: 9, after: 20, secondRunAdded: 0, lineageWired: true },
+      actual: {
+        before: before,
+        added: added,
+        after: after,
+        secondRunAdded: againAdded,
+        lineageWired: !!(qRoot && qSyd && qSyd.adapted_from === qRoot.post_id)
+      }
+    };
+  });
+
   // ---- ensure() only seeds an empty archive ----
   await test('ensure() seeds when empty but never on top of existing data', async () => {
     // empty -> ensure seeds it
