@@ -35,12 +35,12 @@
   }
 
   var INVITE_MEMBER_HTML = '' +
-    '<div class="member member-invite">' +
+    '<button type="button" class="member member-invite" data-invite-open>' +
       '<div class="avatar-lg">' +
         ui.icon('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>') +
       '</div>' +
       '<span>Invite</span>' +
-    '</div>';
+    '</button>';
 
   function typeLabel(post) {
     var main = ui.categoryLabel(post.category);
@@ -193,6 +193,67 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) setOpen(false); });
   }
 
+  // ----- Invite family dialog -----------------------------------------------
+
+  // Wires every [data-invite-open] control to the <dialog id="inviteDialog">.
+  // No real email is sent — this is a static demo — so submitting just swaps to
+  // an "Invitation sent" confirmation. Openers are matched by event delegation,
+  // so the dynamically-rendered "Invite" member tile works too.
+  function wireInviteDialog() {
+    var dialog = document.getElementById('inviteDialog');
+    if (!dialog || typeof dialog.showModal !== 'function') return;
+
+    var form = document.getElementById('inviteForm');
+    var emailInput = document.getElementById('inviteEmail');
+    var errorEl = document.getElementById('inviteError');
+    var sentView = document.getElementById('inviteSentView');
+    var sentEmailEl = document.getElementById('inviteSentEmail');
+
+    function reset() {
+      form.reset();
+      errorEl.hidden = true;
+      sentView.hidden = true;
+      form.hidden = false;
+    }
+    function open() {
+      if (dialog.open) return;
+      reset();
+      dialog.showModal();
+      setTimeout(function () { emailInput.focus(); }, 0);
+    }
+    function close() { if (dialog.open) dialog.close(); }
+
+    document.addEventListener('click', function (e) {
+      var opener = e.target.closest ? e.target.closest('[data-invite-open]') : null;
+      if (opener) { e.preventDefault(); open(); }
+    });
+
+    document.getElementById('inviteCancel').addEventListener('click', close);
+    document.getElementById('inviteDialogClose').addEventListener('click', close);
+    document.getElementById('inviteDone').addEventListener('click', close);
+
+    // Click on the backdrop (the <dialog> itself, outside its content) closes it.
+    dialog.addEventListener('click', function (e) { if (e.target === dialog) close(); });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = emailInput.value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errorEl.hidden = false;
+        emailInput.focus();
+        return;
+      }
+      errorEl.hidden = true;
+      sentEmailEl.textContent = email;
+      form.hidden = true;
+      sentView.hidden = false;
+      document.getElementById('inviteDone').focus();
+    });
+
+    // Deep link: family.html#invite (e.g. from the Home page) opens it straight away.
+    if (window.location.hash === '#invite') open();
+  }
+
   // ----- Boot ----------------------------------------------------------
 
   async function init() {
@@ -202,6 +263,7 @@
     var gridEl = document.getElementById('familyGrid');
 
     wireCategoryChips();
+    wireInviteDialog();
 
     try {
       var view = await window.appData.loadFamilyView();
@@ -210,6 +272,9 @@
       ui.renderTopbar({ familyName: name, userName: view.currentUserName });
       headingName.textContent = name;
       statsEl.textContent = statsLine(view.stats);
+
+      var inviteNameEl = document.getElementById('inviteFamilyName');
+      if (inviteNameEl) inviteNameEl.textContent = view.family && view.family.name ? name : 'your family';
 
       membersEl.innerHTML = view.members.map(memberHtml).join('') + INVITE_MEMBER_HTML;
 

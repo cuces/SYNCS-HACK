@@ -634,6 +634,63 @@ h1, h2, h3, h4 { font-weight: 500; }
 }
 .member-invite:hover .avatar-lg { background: var(--cream); }
 .member-invite .avatar-lg svg { width: 18px; height: 18px; }
+.member-invite { cursor: pointer; background: none; border: none; padding: 0; font: inherit; }
+.member-invite:focus-visible { outline: none; }
+.member-invite:focus-visible .avatar-lg { box-shadow: var(--ring); }
+
+/* ----- Invite family dialog ----- */
+.invite-dialog {
+  width: min(440px, calc(100vw - var(--space-8)));
+  padding: 0; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow-lg);
+}
+.invite-dialog::backdrop {
+  background: rgba(34, 29, 24, 0.42);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+}
+.invite-dialog-body { position: relative; padding: var(--space-8); }
+.invite-dialog h2 {
+  font-family: var(--font-display); font-size: var(--text-h3); font-weight: 600;
+  color: var(--ink); margin: 0 0 var(--space-2);
+}
+.invite-dialog-sub {
+  font-size: var(--text-sm); line-height: var(--leading-normal);
+  color: var(--muted); margin: 0 0 var(--space-5);
+}
+.invite-dialog label {
+  display: block; font-size: var(--text-xs); font-weight: 700;
+  text-transform: uppercase; letter-spacing: var(--tracking-wide);
+  color: var(--muted); margin-bottom: var(--space-2);
+}
+.invite-dialog input[type="email"] {
+  width: 100%; height: 42px; padding: 0 var(--space-4);
+  font-family: var(--font-body); font-size: var(--text-ui); color: var(--ink);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xs);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.invite-dialog input[type="email"]:focus {
+  outline: none; border-color: var(--forest); box-shadow: var(--ring);
+}
+.invite-dialog-error { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--danger); }
+.invite-dialog-actions {
+  display: flex; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-6);
+}
+.invite-dialog-close {
+  position: absolute; top: var(--space-4); right: var(--space-4);
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border: none; background: none; color: var(--meta); border-radius: var(--radius-xs);
+  transition: background var(--transition), color var(--transition);
+}
+.invite-dialog-close:hover { background: var(--cream); color: var(--ink); }
+.invite-dialog-close svg { width: 16px; height: 16px; }
+.invite-dialog-sent { text-align: center; }
+.invite-dialog-sent .invite-dialog-actions { justify-content: center; }
+.invite-dialog-check {
+  width: 48px; height: 48px; margin: 0 auto var(--space-4); border-radius: 50%;
+  background: var(--pale-forest); color: var(--forest-dark);
+  display: flex; align-items: center; justify-content: center;
+}
+.invite-dialog-check svg { width: 24px; height: 24px; }
 
 /* ----- Filter chips ----- */
 .filter-row { margin-top: var(--space-8); display: flex; flex-wrap: wrap; gap: var(--space-2); }
