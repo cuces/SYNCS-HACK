@@ -68,13 +68,15 @@
   /* Filter bar — only relevant while the map view is showing */
   #map-filters {
     display: none;
+    flex-wrap: wrap;
     gap: 16px;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 10px;
     font-size: 0.85rem;
     color: #4c4941;
   }
-  #map-filters label { display: inline-flex; align-items: center; gap: 6px; }
+  .filter-group { display: flex; align-items: center; gap: 8px; }
+  .filter-group > span { font-weight: 500; }
   #map-filters select {
     padding: 5px 8px;
     border: 1px solid #d8d1c4;
@@ -83,7 +85,7 @@
     color: #292821;
     font-size: 0.85rem;
   }
-  #map-filters button {
+  #filter-clear {
     padding: 5px 10px;
     border: 1px solid #d8d1c4;
     border-radius: 6px;
@@ -92,7 +94,24 @@
     font-size: 0.8rem;
     cursor: pointer;
   }
-  #map-filters button:hover { background: #f3ead9; }
+  #filter-clear:hover { background: #f3ead9; }
+
+  /* Multi-select tag chips — styled like the family page's filter chips */
+  .tag-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag-chip {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 15px;
+    border: 1px solid #d8d1c4;
+    background: #fff;
+    color: #6b5c3d;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .tag-chip[aria-pressed="true"] { background: #314936; border-color: #314936; color: #f7f3ea; }
+  .tag-chip:hover { border-color: #314936; }
+  .tag-chips:empty::after { content: "(none)"; color: #8a8375; }
 
   #status {
     margin-top: 12px;
@@ -111,14 +130,16 @@
 
   <button id="toggle-view-btn">Show map view</button>
 
-  <!-- Two filters for the map dots: by country and by tag. Combine (AND). -->
+  <!-- Two filters for the map dots: one country (single), many tags (multi).
+       Country AND tags; multiple tags match posts carrying ANY of them. -->
   <div id="map-filters">
-    <label>Country
+    <label class="filter-group">Country
       <select id="filter-country"><option value="">All</option></select>
     </label>
-    <label>Tag
-      <select id="filter-tag"><option value="">All</option></select>
-    </label>
+    <div class="filter-group">
+      <span>Tags</span>
+      <div id="filter-tags" class="tag-chips" role="group" aria-label="Filter dots by tag"></div>
+    </div>
     <button id="filter-clear" type="button">Clear filters</button>
   </div>
 
@@ -162,25 +183,43 @@
     let currentTree = { nodes: [], edges: [] };
 
     const countrySelect = document.getElementById("filter-country");
-    const tagSelect = document.getElementById("filter-tag");
+    const tagChips = document.getElementById("filter-tags");
     const clearFiltersBtn = document.getElementById("filter-clear");
 
-    // Fill the two <select>s from whatever countries/tags exist in `tree`,
-    // keeping the current choice if it's still available.
+    // Currently pressed tags, as a Set — the map shows dots matching ANY of them.
+    const selectedTags = new Set();
+
+    // Rebuild the country <select> and the tag chip row from whatever countries
+    // and tags exist in `tree`. Selections that still exist are kept.
     function populateFilters(tree) {
-      const fill = (select, values) => {
-        const previous = select.value;
-        select.innerHTML = '<option value="">All</option>';
-        for (const v of values) {
-          const opt = document.createElement("option");
-          opt.value = v;
-          opt.textContent = v;
-          select.appendChild(opt);
-        }
-        select.value = values.includes(previous) ? previous : "";
-      };
-      fill(countrySelect, distinctCountries(tree)); // helpers from mapView.js
-      fill(tagSelect, distinctTags(tree));
+      // Country: single-select dropdown
+      const countries = distinctCountries(tree); // helpers from mapView.js
+      const previousCountry = countrySelect.value;
+      countrySelect.innerHTML = '<option value="">All</option>';
+      for (const c of countries) {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        countrySelect.appendChild(opt);
+      }
+      countrySelect.value = countries.includes(previousCountry) ? previousCountry : "";
+
+      // Tags: multi-select chips (like the family page's filter chips)
+      const tags = distinctTags(tree);
+      // Drop any selected tag that no longer exists in this tree.
+      for (const t of [...selectedTags]) {
+        if (!tags.includes(t)) selectedTags.delete(t);
+      }
+      tagChips.innerHTML = "";
+      for (const t of tags) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "tag-chip";
+        chip.dataset.tag = t;
+        chip.textContent = t;
+        chip.setAttribute("aria-pressed", String(selectedTags.has(t)));
+        tagChips.appendChild(chip);
+      }
     }
 
     // Draw the map using the current tree filtered by the current selections.
@@ -189,7 +228,7 @@
       map.invalidateSize(); // container may have just been un-hidden
       clearMap();
 
-      const filters = { country: countrySelect.value, tag: tagSelect.value };
+      const filters = { country: countrySelect.value, tags: [...selectedTags] };
       const shown = filterTree(currentTree, filters); // filtering lives in mapView.js
       const result = plotTreeOnMap(map, shown);
       drawnLayers = result.layers;
@@ -199,17 +238,11 @@
         .map((p) => [p.lat, p.lng]);
       if (points.length) map.fitBounds(points, { padding: [40, 40], maxZoom: 5 });
 
-      const filterNote =
-        !filters.country && !filters.tag
-          ? "no filter"
-          : [
-              filters.country && `country = ${filters.country}`,
-              filters.tag && `tag = ${filters.tag}`,
-            ]
-              .filter(Boolean)
-              .join(", ");
+      const parts = [];
+      if (filters.country) parts.push(`country = ${filters.country}`);
+      if (filters.tags.length) parts.push(`tags = ${filters.tags.join(" / ")}`);
       statusEl.textContent =
-        `Filter: ${filterNote}\n` +
+        `Filter: ${parts.length ? parts.join(", ") : "no filter"}\n` +
         `Plotted: ${result.markers} markers, ${result.lines} lines.\n` +
         `Hidden: ${currentTree.nodes.length - shown.nodes.length} post(s) by filter, ` +
         `${result.skipped} with no location.`;
@@ -225,10 +258,22 @@
     }
 
     countrySelect.addEventListener("change", applyFiltersAndRender);
-    tagSelect.addEventListener("change", applyFiltersAndRender);
+
+    // One click handler for every tag chip (they're recreated on each load).
+    tagChips.addEventListener("click", (e) => {
+      const chip = e.target.closest(".tag-chip");
+      if (!chip) return;
+      const tag = chip.dataset.tag;
+      if (selectedTags.has(tag)) selectedTags.delete(tag);
+      else selectedTags.add(tag);
+      chip.setAttribute("aria-pressed", String(selectedTags.has(tag)));
+      applyFiltersAndRender();
+    });
+
     clearFiltersBtn.addEventListener("click", () => {
       countrySelect.value = "";
-      tagSelect.value = "";
+      selectedTags.clear();
+      tagChips.querySelectorAll(".tag-chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
       applyFiltersAndRender();
     });
 

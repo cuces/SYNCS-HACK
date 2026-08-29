@@ -251,6 +251,51 @@ async function filterTests() {
     };
   });
 
+  await test('filterTree with multiple tags keeps posts matching ANY of them (OR)', async () => {
+    const tree = demoTree();
+    const input = { filter: { tags: ['soup', 'stew'] } };
+    const out = filterTree(tree, input.filter);
+    return {
+      input,
+      expected: { nodeIds: [1, 2, 3], edges: [{ from: 1, to: 2 }, { from: 2, to: 3 }] },
+      actual: { nodeIds: out.nodes.map(n => n.post_id), edges: out.edges }
+    };
+  });
+
+  await test('filterTree with an empty tags array does not filter on tags', async () => {
+    const tree = demoTree();
+    const input = { filter: { tags: [] } };
+    const out = filterTree(tree, input.filter);
+    return {
+      input,
+      expected: { nodeCount: 4 },
+      actual: { nodeCount: out.nodes.length }
+    };
+  });
+
+  await test('filterTree combines country AND a multi-tag selection', async () => {
+    const tree = demoTree();
+    const input = { filter: { country: 'Mexico', tags: ['soup', 'stew'] } };
+    const out = filterTree(tree, input.filter);
+    return {
+      input,
+      expected: { nodeIds: [2] },
+      actual: { nodeIds: out.nodes.map(n => n.post_id) }
+    };
+  });
+
+  await test('multi-tag filter renders every matching marker on the map', async () => {
+    const tree = demoTree();
+    const input = { filter: { tags: ['soup', 'stew'] } };
+    const map = freshTestMap();
+    const result = plotTreeOnMap(map, filterTree(tree, input.filter));
+    return {
+      input,
+      expected: { markers: 3, lines: 2 },
+      actual: { markers: result.markers, lines: result.lines }
+    };
+  });
+
   await test('filterTree with no filters returns the tree unchanged', async () => {
     const tree = demoTree();
     const out = filterTree(tree, {});
