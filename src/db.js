@@ -69,7 +69,8 @@ async function createPost({
   adapted_from = null, // Parent post if this is derived from an existing one
   is_published = false, // True when the item should appear on the public board
   country = null, // Country the knowledge comes from, e.g. "Vietnam" — optional
-  lat = null, // Latitude for the map view — optional, usually derived from `country`
+  place = null, // Free-text specific location (street level), e.g. "Nonna's kitchen, Leichhardt NSW" — optional
+  lat = null, // Latitude for the map view — optional, from the specific location if given, else derived from `country`
   lng = null // Longitude for the map view — optional
 }) {
   return db.posts.add({
@@ -82,9 +83,12 @@ async function createPost({
     category,
     adapted_from,
     is_published,
-    // Location is optional. The create-post form fills lat/lng from the picked
-    // country (see geo.js). Posts with no location simply don't appear on the map.
+    // Location is optional. The create-post form fills lat/lng from a specific
+    // location the author typed, or failing that from the picked country's rough
+    // centroid (see geo.js). `place` is the human-readable label shown on the
+    // map when it's set. Posts with no location simply don't appear on the map.
     country,
+    place,
     lat,
     lng,
     mentioned: [],

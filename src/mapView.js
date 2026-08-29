@@ -71,8 +71,10 @@ function plotTreeOnMap(map, tree) {
   const located = nodes.filter(_hasLocation);
   for (const post of located) {
     const label = post.title != null ? String(post.title) : `post ${post.post_id}`;
-    const popup = post.country
-      ? `<strong>${label}</strong><br>${post.country}`
+    // Prefer the author's specific location label; fall back to the country.
+    const where = post.place || post.country;
+    const popup = where
+      ? `<strong>${label}</strong><br>${where}`
       : `<strong>${label}</strong>`;
     const marker = L.marker([post.lat, post.lng]).addTo(map).bindPopup(popup);
     layers.push(marker);

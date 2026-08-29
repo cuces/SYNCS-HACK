@@ -21,6 +21,8 @@ const customMemoryTypeInput = document.getElementById('customMemoryType');
 const cuisineRadios = document.querySelectorAll('input[name="cuisine"]');
 const memoryTypeRadios = document.querySelectorAll('input[name="memoryType"]');
 const countrySelect = document.getElementById('country');
+const specificPlaceInput = document.getElementById('specificPlace');
+const specificCoordsInput = document.getElementById('specificCoords');
 
 // Fill the Country of Origin dropdown from geo.js's hand-picked table. When a
 // country is chosen we also store its rough lat/lng so the post shows up on the
@@ -75,6 +77,15 @@ function prefillFromParent(parent) {
   if (countrySelect && parent.country) {
     const hasOption = Array.from(countrySelect.options).some((o) => o.value === parent.country);
     if (hasOption) countrySelect.value = parent.country;
+  }
+
+  // Carry over the parent's specific location so the branch starts from the same
+  // spot on the map. Only when the parent had a real specific location (a
+  // `place` label) — not when its pin was just the country centroid, which the
+  // child re-derives from its own country pick. The author can still change it.
+  if (parent.place && parent.lat != null && parent.lng != null) {
+    if (specificPlaceInput) specificPlaceInput.value = parent.place;
+    if (specificCoordsInput) specificCoordsInput.value = parent.lat + ', ' + parent.lng;
   }
 
   const tags = Array.isArray(parent.tags) ? parent.tags.map((t) => String(t).toLowerCase()) : [];
@@ -278,7 +289,19 @@ form.addEventListener('submit', async (e) => {
   const cuisine = cuisineEl ? cuisineEl.value : '';
   const customCuisine = cuisine === 'custom-cuisine' ? customCuisineInput.value.trim() : '';
   const country = countrySelect ? (countrySelect.value || null) : null;
-  const coords = country && typeof countryToLatLng === 'function' ? countryToLatLng(country) : null;
+  const countryCoords = country && typeof countryToLatLng === 'function' ? countryToLatLng(country) : null;
+
+  // Optional "specific location" — a free-text label + pasted coordinates. When
+  // the author gives coordinates they override the country centroid, so the
+  // memory pins to the exact spot on the map.
+  const place = specificPlaceInput ? specificPlaceInput.value.trim() : '';
+  const specificCoordsRaw = specificCoordsInput ? specificCoordsInput.value.trim() : '';
+  const specificCoords = specificCoordsRaw && typeof parseLatLng === 'function'
+    ? parseLatLng(specificCoordsRaw)
+    : null;
+
+  // A specific location, when supplied, wins over the picked country.
+  const coords = specificCoords || countryCoords;
 
   if (!title) return showError('Please enter a title for your memory.');
   if (!memoryType) return showError('Please choose a memory type.');
@@ -289,6 +312,9 @@ form.addEventListener('submit', async (e) => {
     return showError('Please write something in the description.');
   }
   if (!visibility) return showError('Please choose a visibility option.');
+  if (specificCoordsRaw && !specificCoords) {
+    return showError('Couldn’t read those coordinates. Use "latitude, longitude", e.g. -33.883, 151.157.');
+  }
 
   const submitBtn = form.querySelector('button[type="submit"]');
   const originalText = submitBtn.textContent;
@@ -324,6 +350,7 @@ form.addEventListener('submit', async (e) => {
       // The lineage link. null for a brand-new root memory.
       adapted_from: adaptedFromPost ? adaptedFromPost.post_id : null,
       country: country,
+      place: place || null,
       lat: coords ? coords.lat : null,
       lng: coords ? coords.lng : null
     });

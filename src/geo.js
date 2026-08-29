@@ -1,9 +1,11 @@
-// geo.js — country → approximate coordinates lookup.
+// geo.js — location helpers for the map view.
 //
-// The create-post form shows a country dropdown. When someone picks a country
-// we store a lat/lng on the post so the map view has a point to plot. This is a
-// small hand-picked table on purpose — no geocoding API, so the app stays fully
-// offline. Coordinates are a rough country centroid; good enough for a world map.
+// The create-post form shows a country dropdown and an optional "specific
+// location" field. When someone picks a country we store its rough centroid
+// (countryToLatLng); when they type an exact spot we parse the coordinates
+// (parseLatLng) and use those instead. A small hand-picked country table on
+// purpose — no geocoding API, so the app stays fully offline. Country
+// coordinates are a rough centroid; good enough for a world map.
 //
 // Load this BEFORE any code that calls countryToLatLng() (db.js does not depend
 // on it — the form does the lookup and passes lat/lng into createPost()).
@@ -68,4 +70,19 @@ function countryToLatLng(country) {
 // Sorted list of country names, for populating a <select> in the form.
 function supportedCountries() {
   return [...new Set(Object.keys(COUNTRY_COORDS).map(k => k.trim()))].sort();
+}
+
+// Parse a free-text "latitude, longitude" string (e.g. copied straight out of
+// Google Maps) into { lat, lng }. Accepts comma- or space-separated numbers and
+// tolerates surrounding brackets/whitespace. Returns null when it can't find two
+// numbers in valid range — the form treats that as "no specific location".
+function parseLatLng(text) {
+  if (!text) return null;
+  const nums = String(text).match(/-?\d+(?:\.\d+)?/g);
+  if (!nums || nums.length < 2) return null;
+  const lat = parseFloat(nums[0]);
+  const lng = parseFloat(nums[1]);
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat, lng };
 }

@@ -190,6 +190,44 @@ async function geoTests() {
       }
     };
   });
+
+  await test('parseLatLng reads a pasted "lat, lng" string', async () => {
+    const input = { text: '-33.883, 151.157' };
+    const c = parseLatLng('-33.883, 151.157');
+    return {
+      input,
+      expected: { lat: -33.883, lng: 151.157 },
+      actual: { lat: c ? c.lat : null, lng: c ? c.lng : null }
+    };
+  });
+
+  await test('parseLatLng tolerates spaces, brackets and no comma', async () => {
+    const input = { cases: ['(48.8584 2.2945)', '  40.7128   -74.0060  '] };
+    const a = parseLatLng('(48.8584 2.2945)');
+    const b = parseLatLng('  40.7128   -74.0060  ');
+    return {
+      input,
+      expected: { a: '48.8584,2.2945', b: '40.7128,-74.006' },
+      actual: {
+        a: a ? a.lat + ',' + a.lng : null,
+        b: b ? b.lat + ',' + b.lng : null
+      }
+    };
+  });
+
+  await test('parseLatLng returns null for junk or out-of-range values', async () => {
+    const input = { cases: ['somewhere nice', '200, 5', '', null] };
+    return {
+      input,
+      expected: { words: null, outOfRange: null, empty: null, nullish: null },
+      actual: {
+        words: parseLatLng('somewhere nice'),
+        outOfRange: parseLatLng('200, 5'),
+        empty: parseLatLng(''),
+        nullish: parseLatLng(null)
+      }
+    };
+  });
 }
 
 // ---------- Map filters (filterTree + distinct* + re-render) ----------

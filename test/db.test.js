@@ -241,6 +241,35 @@ async function postTests() {
     };
   });
 
+  await test('createPost stores a specific location (place + exact lat/lng)', async () => {
+    const familyId = await createFamily('Nguyen');
+    const input = {
+      poster_id: 1, family_id: familyId, title: 'Nonna’s ragù', description: '', file: null,
+      category: 'recipe', country: 'Italy',
+      place: "Nonna's kitchen, Leichhardt NSW", lat: -33.883, lng: 151.157
+    };
+    const postId = await createPost(input);
+    const row = await db.posts.get(postId);
+    return {
+      input,
+      expected: { place: "Nonna's kitchen, Leichhardt NSW", lat: -33.883, lng: 151.157 },
+      actual: { place: row.place, lat: row.lat, lng: row.lng }
+    };
+  });
+
+  await test('createPost defaults place to null when the form omits it', async () => {
+    const familyId = await createFamily('Nguyen');
+    const postId = await createPost({
+      poster_id: 1, family_id: familyId, title: 'No place', description: '', file: null, category: 'recipe'
+    });
+    const row = await db.posts.get(postId);
+    return {
+      input: { note: 'no place field passed' },
+      expected: { place: null },
+      actual: { place: row.place }
+    };
+  });
+
   await test('getFamilyPosts returns only that family\'s posts', async () => {
     const a = await createFamily('Nguyen');
     const b = await createFamily('Okafor');

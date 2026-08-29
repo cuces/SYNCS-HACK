@@ -12,7 +12,6 @@
 
   // Active filters — the grid shows a card only when it matches ALL of them.
   var activeCategory = 'all';
-  var activeCulture = null;
   var activeTag = null;
 
   // ----- Rendering -------------------------------------------------------
@@ -105,15 +104,14 @@
 
   // ----- Filters (operate on already-rendered cards) ------------------------
 
-  // Re-apply the category chip + both custom dropdowns to every card.
+  // Re-apply the category chip + the custom tags dropdown to every card.
   function applyFilters() {
     var cards = document.querySelectorAll('#familyGrid .post-card');
     Array.prototype.forEach.call(cards, function (card) {
       var cardTags = (card.dataset.tags || '').split('|');
       var catOk = activeCategory === 'all' || card.dataset.category === activeCategory;
-      var cultureOk = !activeCulture || cardTags.indexOf(activeCulture) !== -1;
       var tagOk = !activeTag || cardTags.indexOf(activeTag) !== -1;
-      card.hidden = !(catOk && cultureOk && tagOk);
+      card.hidden = !(catOk && tagOk);
     });
   }
 
@@ -227,16 +225,8 @@
 
       renderGrid(gridEl, view.posts);
 
-      // Two searchable dropdowns, built from the free-text values on PUBLISHED
-      // posts (see data.js). Each hides itself when it has nothing to show.
-      wireDropdownFilter({
-        prefix: 'culture',
-        values: view.customCultures || [],
-        anyLabel: 'Any culture',
-        defaultLabel: 'Custom cultures',
-        isSelected: function () { return activeCulture; },
-        onPick: function (v) { activeCulture = v; }
-      });
+      // Searchable dropdown, built from the free-text tag values on PUBLISHED
+      // posts (see data.js). Hides itself when it has nothing to show.
       wireDropdownFilter({
         prefix: 'tag',
         values: view.customTags || [],

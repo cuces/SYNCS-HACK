@@ -26,7 +26,7 @@ then open `src/pages/` and navigate to the desired page (start with `src/pages/i
 src/
   db.js            data layer — Dexie/IndexedDB store + read/write helpers (also used by tests)
   seed.js          demo showcase data (seeds an empty archive)
-  geo.js           country → approximate lat/lng lookup (used by the Add Memory form)
+  geo.js           map-location helpers for the Add Memory form — country → approximate lat/lng, plus parsing a pasted "lat, lng" for a specific spot
   treeToHtml.js    renders a getFullTree() result as nested HTML
   mapView.js       plots a lineage tree onto a Leaflet map
   styles.css       all frontend styling, one file (tokens → shell → components → per-page)
