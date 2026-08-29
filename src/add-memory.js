@@ -266,6 +266,47 @@ function resetForm() {
   updateToolbarState();
 }
 
+// Work out which family this memory belongs to and who is authoring it.
+// When someone is signed in (auth.js), it MUST be their own family + user
+// record — otherwise the memory lands on another family's board and the author
+// never sees it again (their My Family board and the private view are both
+// scoped to their family). With no session we fall back to the first family so
+// the offline demo build still works.
+async function resolvePostOwner() {
+  const session = window.cornerStoneAuth && typeof window.cornerStoneAuth.getCurrentUser === 'function'
+    ? window.cornerStoneAuth.getCurrentUser()
+    : null;
+  const email = session && session.email ? String(session.email).trim().toLowerCase() : '';
+
+  if (email) {
+    const users = await getAllUsers();
+    const me = users.find((u) => String(u.email || '').trim().toLowerCase() === email);
+    if (me && me.family_id != null) {
+      return { familyId: me.family_id, posterId: me.user_id };
+    }
+
+    // Session exists but there's no matching user row yet — create one against
+    // the family the session already points at.
+    if (session.family_id != null) {
+      return {
+        familyId: session.family_id,
+        posterId: await createUser({
+          name: session.name || 'You', family_id: session.family_id, email: session.email, phone: null
+        })
+      };
+    }
+  }
+
+  // Not logged in: original behaviour — attribute to the first family.
+  const families = await getFamilies();
+  const familyId = families.length ? families[0].family_id : await createFamily('Your family');
+  const members = await getUsersByFamily(familyId);
+  const posterId = members.length
+    ? members[0].user_id
+    : await createUser({ name: 'You', family_id: familyId, email: null, phone: null });
+  return { familyId, posterId };
+}
+
 cancelBtn.addEventListener('click', () => {
   if (confirm('Discard this memory?')) {
     window.location.href = adaptedFromId
@@ -322,12 +363,7 @@ form.addEventListener('submit', async (e) => {
   submitBtn.textContent = 'Saving…';
 
   try {
-    const families = await getFamilies();
-    const familyId = families.length ? families[0].family_id : await createFamily('Your family');
-    const members = await getUsersByFamily(familyId);
-    const posterId = members.length
-      ? members[0].user_id
-      : await createUser({ name: 'You', family_id: familyId, email: null, phone: null });
+    const { familyId, posterId } = await resolvePostOwner();
 
     // tags[0] is always the culture; tags[1] the memory type. The My Family
     // board reads these positions to build its custom-culture / custom-tag lists.

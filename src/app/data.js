@@ -264,8 +264,10 @@
   async function loadCommunityView() {
     await ready();
 
-    const family = await getCurrentFamily();
-    const familyId = family ? Number(family.family_id) : null;
+    // The community archive is the cross-family public board: EVERY published
+    // post, from every family, regardless of who (if anyone) is logged in. It is
+    // deliberately not scoped to the current user's family — that's what the My
+    // Family board is for.
     const [posts, users, families] = await Promise.all([
       getPublishedPosts(),
       getAllUsers(),
@@ -275,11 +277,7 @@
     const usersById = new Map(users.map(function (u) { return [u.user_id, u]; }));
     const familiesById = new Map(families.map(function (f) { return [f.family_id, f]; }));
 
-    const filteredPosts = familyId != null
-      ? posts.filter(function (post) { return Number(post.family_id) === familyId; })
-      : posts;
-
-    const list = filteredPosts
+    const list = posts
       .slice()
       .sort(byNewest)
       .map(function (post) {
