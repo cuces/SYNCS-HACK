@@ -80,19 +80,7 @@
 }
 .type-icon svg { width: 13px; height: 13px; color: var(--clay); }
 
-/* ===== Empty / error states for the data-bound region ===== */
-.state-block {
-  border: 1px solid var(--border); border-radius: 14px;
-  background: var(--surface);
-  padding: 40px 32px;
-  text-align: center;
-}
-.state-block svg { width: 30px; height: 30px; color: var(--tan); margin-bottom: 12px; }
-.state-block h3 {
-  font-family: var(--font-display); font-size: 19px; font-weight: 500; color: var(--ink); margin: 0 0 6px 0;
-}
-.state-block p { font-size: 13.5px; color: var(--muted); margin: 0 auto; max-width: 360px; line-height: 1.5; }
-
+/* ===== Loading line for the data-bound region (empty/error panels: base.css) ===== */
 .recent-loading { font-size: 13.5px; color: var(--muted); padding: 8px 2px; }
 
 /* ===== Bottom row: quote + quick actions ===== */

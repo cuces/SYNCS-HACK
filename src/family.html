@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ROOTED — Home</title>
+<title>ROOTED — My Family</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="base.css">
-<link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="family.css">
 </head>
 <body>
 <div class="app-shell">
@@ -20,11 +20,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V13"/><path d="M12 13c0-4 3-6 7-6-1 4-3 6-7 6Z"/><path d="M12 13c0-3-2.5-5-6-5 .8 3 2.5 5 6 5Z"/></svg>
       </div>
       <nav class="sidebar-nav" aria-label="Primary">
-        <a href="index.html" aria-current="page">
+        <a href="index.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
           Home
         </a>
-        <a href="family.html">
+        <a href="family.html" aria-current="page">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><circle cx="18" cy="8" r="2.4"/><path d="M16 21c0-2.8 1.6-4.8 4-5.6"/></svg>
           My Family
         </a>
@@ -43,7 +43,7 @@
       </nav>
     </div>
     <nav class="sidebar-nav">
-      <a href="#">
+      <a href="#" aria-disabled="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1Z"/></svg>
         Settings
       </a>
@@ -60,7 +60,7 @@
       <div class="topbar-right">
         <div class="topbar-search">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input type="search" placeholder="Search memories..." aria-label="Search memories">
+          <input type="search" placeholder="Search family board..." aria-label="Search family board">
         </div>
         <button class="icon-btn" type="button" aria-label="Notifications">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
@@ -71,84 +71,37 @@
 
     <main class="app-content">
 
-      <section class="welcome-card">
-        <svg class="hero-florals" viewBox="0 0 220 190" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
-          <path d="M30 190C30 130 40 90 55 40"/>
-          <path d="M55 60c14 -6 22 -16 24 -30"/>
-          <path d="M55 90c16 -2 26 -10 30 -24"/>
-          <path d="M50 120c14 2 24 -4 30 -16"/>
-          <path d="M45 150c12 4 22 0 28 -10"/>
-          <circle cx="79" cy="30" r="3"/>
-          <circle cx="85" cy="66" r="3"/>
-          <circle cx="80" cy="96" r="3"/>
-          <circle cx="80" cy="134" r="3"/>
-        </svg>
-        <div class="welcome-text">
-          <h1>Welcome back<span id="welcomeName"></span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M13 12v6M10 15h6M18 3l1.5 3L23 8l-3.5 2L18 13l-1.5-3L13 8l3.5-2Z"/></svg>
-          </h1>
-          <p>Keep your family's stories close.</p>
+      <div class="family-header">
+        <div>
+          <h1 id="familyHeading">Your family</h1>
+          <p class="tagline">Preserving our story, one memory at a time.</p>
+          <p class="stats" id="familyStats">Loading&hellip;</p>
         </div>
-        <div class="polaroid-wrap" aria-hidden="true">
-          <div class="paper-behind"></div>
-          <div class="polaroid">
-            <div class="tape"></div>
-            <div class="polaroid-fill">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div class="section-block">
-        <div class="section-head">
-          <h2>Recently added</h2>
-          <a href="family.html">View all</a>
-        </div>
-
-        <div id="recentContainer" class="recent-grid">
-          <p class="recent-loading">Loading recent memories&hellip;</p>
+        <div class="family-header-actions">
+          <button class="btn btn-secondary" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+            Invite Family
+          </button>
+          <button class="btn btn-primary" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Memory
+          </button>
         </div>
       </div>
 
-      <div class="bottom-row">
+      <div class="members-row" id="membersRow" aria-label="Family members"></div>
 
-        <div class="quote-card">
-          <svg class="quote-leaf" viewBox="0 0 70 70" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
-            <path d="M10 68C10 46 16 28 26 12"/>
-            <path d="M26 24c9 -3 14 -9 15 -18"/>
-            <path d="M24 40c10 -1 16 -6 19 -15"/>
-            <path d="M20 56c9 1 15 -3 18 -10"/>
-          </svg>
-          <p class="quote-mark" aria-hidden="true">&ldquo;</p>
-          <p class="quote-text">A family is a little world created by love.</p>
-          <p class="quote-attr">— unknown</p>
-        </div>
+      <div class="filter-row" role="group" aria-label="Filter family posts by category">
+        <button class="filter-chip" type="button" data-filter="all" aria-pressed="true">All</button>
+        <button class="filter-chip" type="button" data-filter="recipe" aria-pressed="false">Recipes</button>
+        <button class="filter-chip" type="button" data-filter="story" aria-pressed="false">Stories</button>
+        <button class="filter-chip" type="button" data-filter="tradition" aria-pressed="false">Traditions</button>
+        <button class="filter-chip" type="button" data-filter="memory" aria-pressed="false">Memories</button>
+        <button class="filter-chip" type="button" data-filter="history" aria-pressed="false">Family History</button>
+      </div>
 
-        <div class="quick-actions-block">
-          <div class="section-head">
-            <h2>Quick actions</h2>
-          </div>
-          <div class="actions-grid">
-            <a class="action-btn" href="family.html">
-              <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9 12 2"/></svg></span>
-              Add Memory
-            </a>
-            <a class="action-btn" href="family.html">
-              <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3"/><path d="M8 12v9"/><path d="M17 3c-1.5 1.5-2 3-2 5s.5 3 2 4v9"/></svg></span>
-              Add Recipe
-            </a>
-            <a class="action-btn" href="family.html">
-              <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></span>
-              Record Story
-            </a>
-            <a class="action-btn" href="family.html">
-              <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><circle cx="18" cy="8" r="2.4"/><path d="M16 21c0-2.8 1.6-4.8 4-5.6"/></svg></span>
-              Invite Family
-            </a>
-          </div>
-        </div>
-
+      <div id="familyGrid" class="family-post-grid">
+        <p class="family-loading">Loading your family board&hellip;</p>
       </div>
 
     </main>
@@ -160,6 +113,6 @@
 <script src="db.js"></script>
 <script src="ui.js"></script>
 <script src="data.js"></script>
-<script src="home.js"></script>
+<script src="family.js"></script>
 </body>
 </html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOTED — The Danganan Family</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #29241F;
+  --sidebar: #221D18;
+  --sidebar-text: #C7BFAF;
+  --sidebar-text-active: #F7F3EA;
+  --paper: #F5F0E6;
+  --surface: #FFFFFF;
+  --cream: #EFE7D8;
+  --cream-2: #E9E0CE;
+  --tan: #CBB89A;
+  --clay: #A67C52;
+  --brown: #6D5B45;
+  --forest: #557C5E;
+  --forest-dark: #44614C;
+  --pale-forest: #E4EAE1;
+  --border: #E4DDCC;
+  --muted: #6F6656;
+  --meta: #948A78;
+
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; }
+button { font-family: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--forest); outline-offset: 2px; }
+
+/* ===== Shell ===== */
+.app-shell { display: flex; min-height: 100vh; }
+
+.app-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--sidebar);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22px 14px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.sidebar-logo {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-display); font-size: 21px; font-weight: 600;
+  letter-spacing: 0.5px; color: var(--sidebar-text-active);
+  padding: 6px 10px 26px 10px;
+}
+.sidebar-logo svg { width: 15px; height: 15px; color: var(--tan); flex-shrink: 0; }
+
+.sidebar-nav { display: flex; flex-direction: column; gap: 3px; }
+.sidebar-nav a {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 12px; border-radius: 9px;
+  color: var(--sidebar-text); font-size: 14px; font-weight: 500;
+}
+.sidebar-nav a svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-nav a:hover { color: var(--sidebar-text-active); background: rgba(247,243,234,0.06); }
+.sidebar-nav a[aria-current="page"] { color: var(--sidebar-text-active); background: rgba(247,243,234,0.1); }
+
+/* ===== Main / Topbar ===== */
+.app-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.app-topbar {
+  height: 78px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px;
+  gap: 24px;
+}
+.family-switch { display: flex; align-items: center; gap: 8px; background: none; border: none; padding: 4px 2px; }
+.family-switch span { font-family: var(--font-display); font-size: 21px; font-weight: 500; color: var(--ink); }
+.family-switch svg { width: 16px; height: 16px; color: var(--muted); }
+
+.topbar-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.topbar-search {
+  display: flex; align-items: center; width: 230px; height: 40px;
+  background: var(--cream); border: 1px solid var(--border); border-radius: 20px; padding: 0 14px;
+}
+.topbar-search svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+.topbar-search input {
+  border: none; background: transparent; outline: none;
+  font-family: var(--font-body); font-size: 13px; color: var(--ink);
+  margin-left: 8px; width: 100%;
+}
+.topbar-search input::placeholder { color: var(--meta); }
+
+.icon-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0;
+}
+.icon-btn svg { width: 17px; height: 17px; color: var(--brown); }
+.icon-btn .dot { position: absolute; top: 8px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: #C4634F; }
+
+.avatar-photo {
+  width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.avatar-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+.app-content { padding: 4px 40px 64px 40px; flex: 1; }
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 42px; padding: 0 20px; border-radius: 9px;
+  font-family: var(--font-body); font-size: 13.5px; font-weight: 600;
+  border: 1px solid transparent;
+}
+.btn svg { width: 16px; height: 16px; }
+.btn-primary { background: var(--forest); color: #F7F3EA; }
+.btn-primary:hover { background: var(--forest-dark); }
+.btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--clay); }
+
+/* ===== Family header ===== */
+.family-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  padding-top: 8px;
+}
+.family-header h1 {
+  font-family: var(--font-display); font-size: 32px; font-weight: 500; color: var(--ink); margin: 0 0 8px 0;
+}
+.family-header .tagline {
+  font-family: var(--font-display); font-style: italic; font-size: 16px; font-weight: 500;
+  color: var(--brown); margin: 0 0 10px 0;
+}
+.family-header .stats { font-size: 13.5px; color: var(--muted); margin: 0; }
+.family-header-actions { display: flex; gap: 10px; flex-shrink: 0; }
+
+/* ===== Members row ===== */
+.members-row {
+  margin-top: 30px; display: flex; align-items: flex-start; gap: 24px;
+  overflow-x: auto; padding-bottom: 4px;
+}
+.member { display: flex; flex-direction: column; align-items: center; gap: 9px; flex-shrink: 0; width: 68px; }
+.member .avatar-lg {
+  width: 58px; height: 58px; border-radius: 50%; overflow: hidden;
+  border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--border);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cream-2);
+}
+.member .avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
+.member span { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.3; }
+.member span.role { color: var(--meta); font-size: 10.5px; display: block; }
+.member-invite .avatar-lg {
+  background: var(--surface); color: var(--clay);
+  border: 1px dashed var(--clay); box-shadow: none;
+}
+.member-invite .avatar-lg svg { width: 18px; height: 18px; }
+
+/* ===== Filter chips ===== */
+.filter-row { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 8px; }
+.filter-chip {
+  height: 37px; padding: 0 17px; border-radius: 19px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+  font-family: var(--font-body); font-size: 13.5px; font-weight: 500;
+}
+.filter-chip[aria-pressed="true"] { background: var(--forest); border-color: var(--forest); color: #F7F3EA; }
+.filter-chip:hover { border-color: var(--forest); }
+
+/* ===== Post grid ===== */
+.family-post-grid { margin-top: 26px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+
+.post-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 2px 10px rgba(41,36,31,0.05);
+}
+.post-image-wrap { position: relative; }
+.post-image { width: 100%; height: 152px; object-fit: cover; }
+.privacy-badge {
+  position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 5px;
+  background: rgba(34,29,24,0.72); color: #F7F3EA;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 7px;
+}
+.privacy-badge svg { width: 11px; height: 11px; }
+.privacy-badge.is-public { background: rgba(85,124,94,0.88); }
+
+.post-body { padding: 14px 16px 16px 16px; }
+.post-type {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--clay); margin: 0 0 6px 0;
+}
+.post-title {
+  font-family: var(--font-display); font-size: 17px; font-weight: 500; line-height: 22px;
+  color: var(--ink); margin: 0 0 6px 0;
+}
+.post-desc { font-size: 12.5px; line-height: 18px; color: var(--muted); margin: 0 0 12px 0; }
+.post-foot { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--meta); }
+
+@media (max-width: 1150px) {
+  .app-sidebar { display: none; }
+  .family-post-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 800px) {
+  .family-post-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .app-content { padding: 4px 20px 56px 20px; }
+  .app-topbar { padding: 0 20px; }
+  .family-post-grid { grid-template-columns: 1fr; }
+  .family-header { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="app-sidebar">
+    <div>
+      <div class="sidebar-logo">
+        ROOTED
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V13"/><path d="M12 13c0-4 3-6 7-6-1 4-3 6-7 6Z"/><path d="M12 13c0-3-2.5-5-6-5 .8 3 2.5 5 6 5Z"/></svg>
+      </div>
+      <nav class="sidebar-nav" aria-label="Primary">
+        <a href="home.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+          Home
+        </a>
+        <a href="family.html" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><circle cx="18" cy="8" r="2.4"/><path d="M16 21c0-2.8 1.6-4.8 4-5.6"/></svg>
+          My Family
+        </a>
+        <a href="family.html#add">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Memory
+        </a>
+        <a href="community.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3Z"/></svg>
+          Community
+        </a>
+        <a href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4.5 8-11.2V5l-8-3-8 3v5.8C4 17.5 12 22 12 22Z"/></svg>
+          Saved
+        </a>
+      </nav>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+        Settings
+      </a>
+    </nav>
+  </aside>
+
+  <div class="app-main">
+
+    <header class="app-topbar">
+      <button class="family-switch" type="button">
+        <span>The Danganan Family</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="topbar-right">
+        <div class="topbar-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="search" placeholder="Search family board..." aria-label="Search family board">
+        </div>
+        <button class="icon-btn" type="button" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="dot" aria-hidden="true"></span>
+        </button>
+        <div class="avatar-photo">
+          <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" alt="Amy's profile photo">
+        </div>
+      </div>
+    </header>
+
+    <main class="app-content">
+
+      <div class="family-header">
+        <div>
+          <h1>The Danganan Family</h1>
+          <p class="tagline">Preserving our story, one memory at a time.</p>
+          <p class="stats">5 members &middot; 8 memories preserved &middot; 3 shared with the community</p>
+        </div>
+        <div class="family-header-actions">
+          <button class="btn btn-secondary" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+            Invite Family
+          </button>
+          <button class="btn btn-primary" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Memory
+          </button>
+        </div>
+      </div>
+
+      <div class="members-row">
+        <div class="member">
+          <div class="avatar-lg"><img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&q=80" alt="Amy"></div>
+          <span>Amy<span class="role">You</span></span>
+        </div>
+        <div class="member">
+          <div class="avatar-lg"><img src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=120&q=80" alt="Lola"></div>
+          <span>Lola</span>
+        </div>
+        <div class="member">
+          <div class="avatar-lg"><img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=120&q=80" alt="Lolo"></div>
+          <span>Lolo</span>
+        </div>
+        <div class="member">
+          <div class="avatar-lg"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&q=80" alt="Tatay"></div>
+          <span>Tatay</span>
+        </div>
+        <div class="member">
+          <div class="avatar-lg"><img src="https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=120&q=80" alt="Nanay"></div>
+          <span>Nanay</span>
+        </div>
+        <div class="member member-invite">
+          <div class="avatar-lg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <span>Invite</span>
+        </div>
+      </div>
+
+      <div class="filter-row" role="group" aria-label="Filter family posts by category">
+        <button class="filter-chip" type="button" aria-pressed="true">All</button>
+        <button class="filter-chip" type="button" aria-pressed="false">Recipes</button>
+        <button class="filter-chip" type="button" aria-pressed="false">Stories</button>
+        <button class="filter-chip" type="button" aria-pressed="false">Traditions</button>
+        <button class="filter-chip" type="button" aria-pressed="false">Memories</button>
+        <button class="filter-chip" type="button" aria-pressed="false">Family History</button>
+      </div>
+
+      <div class="family-post-grid">
+
+        <article class="post-card">
+          <a href="post.html" style="display:flex; flex-direction:column;">
+            <div class="post-image-wrap">
+              <img class="post-image" src="https://images.unsplash.com/photo-1598515213692-5f252f04f1af?w=500&q=80" alt="A pot of chicken adobo">
+              <span class="privacy-badge is-public"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>Public</span>
+            </div>
+            <div class="post-body">
+              <p class="post-type">Recipe &middot; Filipino</p>
+              <h3 class="post-title">Lola's Adobo</h3>
+              <p class="post-desc">The adobo Lola has made every Sunday since she arrived from Ilocos.</p>
+              <p class="post-foot"><span>by Lola</span><span>12 May</span></p>
+            </div>
+          </a>
+        </article>
+
+        <article class="post-card">
+          <div class="post-image-wrap">
+            <img class="post-image" src="https://images.unsplash.com/photo-1517154421773-0529f29ea451?w=500&q=80" alt="Old street in Manila">
+            <span class="privacy-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="1"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>Private</span>
+          </div>
+          <div class="post-body">
+            <p class="post-type">Story &middot; Filipino</p>
+            <h3 class="post-title">Our First Home in Manila</h3>
+            <p class="post-desc">Tatay remembers the apartment above the sari-sari store where we all grew up.</p>
+            <p class="post-foot"><span>by Tatay</span><span>3 May</span></p>
+          </div>
+        </article>
+
+        <article class="post-card">
+          <div class="post-image-wrap">
+            <img class="post-image" src="https://images.unsplash.com/photo-1511895426328-dc8714191300?w=500&q=80" alt="Family gathered for a fiesta dinner">
+            <span class="privacy-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="1"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>Private</span>
+          </div>
+          <div class="post-body">
+            <p class="post-type">Memory &middot; Filipino</p>
+            <h3 class="post-title">Fiesta 2024</h3>
+            <p class="post-desc">The whole family together for the first time in three years.</p>
+            <p class="post-foot"><span>by Nanay</span><span>10 Feb</span></p>
+          </div>
+        </article>
+
+        <article class="post-card">
+          <div class="post-image-wrap">
+            <img class="post-image" src="https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=500&q=80" alt="Old handwritten notebook">
+            <span class="privacy-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="1"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>Private</span>
+          </div>
+          <div class="post-body">
+            <p class="post-type">Audio &middot; Family History</p>
+            <h3 class="post-title">Lolo's Childhood in Ilocos</h3>
+            <p class="post-desc">A recording of Lolo telling stories from his village, 0:45.</p>
+            <p class="post-foot"><span>by Lolo</span><span>28 Apr</span></p>
+          </div>
+        </article>
+
+        <article class="post-card">
+          <a href="post.html" style="display:flex; flex-direction:column;">
+            <div class="post-image-wrap">
+              <img class="post-image" src="https://images.unsplash.com/photo-1582576163090-09751c04d05c?w=500&q=80" alt="A bowl of sinigang soup">
+              <span class="privacy-badge is-public"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>Public</span>
+            </div>
+            <div class="post-body">
+              <p class="post-type">Recipe &middot; Filipino</p>
+              <h3 class="post-title">Lola's Sinigang</h3>
+              <p class="post-desc">A sour tamarind broth that means someone in the family is under the weather.</p>
+              <p class="post-foot"><span>by Lola</span><span>19 Apr</span></p>
+            </div>
+          </a>
+        </article>
+
+        <article class="post-card">
+          <div class="post-image-wrap">
+            <img class="post-image" src="https://images.unsplash.com/photo-1521302200778-33500795e128?w=500&q=80" alt="Neighbours gathered together outdoors">
+            <span class="privacy-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="1"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>Private</span>
+          </div>
+          <div class="post-body">
+            <p class="post-type">Tradition &middot; Filipino</p>
+            <h3 class="post-title">The Bayanihan Spirit</h3>
+            <p class="post-desc">When a neighbour moves house, the whole barangay still shows up to help carry it.</p>
+            <p class="post-foot"><span>by Lola</span><span>2 Apr</span></p>
+          </div>
+        </article>
+
+        <article class="post-card">
+          <a href="post.html" style="display:flex; flex-direction:column;">
+            <div class="post-image-wrap">
+              <img class="post-image" src="https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=500&q=80" alt="Bibingka rice cakes">
+              <span class="privacy-badge is-public"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>Public</span>
+            </div>
+            <div class="post-body">
+              <p class="post-type">Recipe &middot; Filipino</p>
+              <h3 class="post-title">Bibingka for Simbang Gabi</h3>
+              <p class="post-desc">Rice cakes cooked over charcoal, sold outside church every dawn mass in December.</p>
+              <p class="post-foot"><span>by Lola</span><span>29 Jan</span></p>
+            </div>
+          </a>
+        </article>
+
+        <article class="post-card">
+          <div class="post-image-wrap">
+            <img class="post-image" src="https://images.unsplash.com/photo-1518281420975-50db6e5d0a97?w=500&q=80" alt="Bundle of old letters">
+            <span class="privacy-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="1"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>Private</span>
+          </div>
+          <div class="post-body">
+            <p class="post-type">Family History &middot; Filipino</p>
+            <h3 class="post-title">Letters from Ilocos</h3>
+            <p class="post-desc">Correspondence between our great-grandparents, found last winter.</p>
+            <p class="post-foot"><span>by Tatay</span><span>15 Jan</span></p>
+          </div>
+        </article>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // Category filter (client-side demo filtering)
+  var chips = document.querySelectorAll('.filter-chip');
+  var cards = document.querySelectorAll('.family-post-grid .post-card');
+
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      chips.forEach(function (c) { c.setAttribute('aria-pressed', 'false'); });
+      chip.setAttribute('aria-pressed', 'true');
+      var category = chip.textContent.trim();
+
+      cards.forEach(function (card) {
+        var typeText = card.querySelector('.post-type').textContent;
+        var matches = category === 'All' || typeText.indexOf(category.replace(/s$/, '')) !== -1 || typeText.indexOf(category) !== -1;
+        card.style.display = matches ? '' : 'none';
+      });
+    });
+  });
+</script>
+</body>
+</html>
