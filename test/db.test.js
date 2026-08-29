@@ -1,11 +1,12 @@
 // db.test.js — tests for the CRUD helpers in db.js
+// (moved to test/ to match new layout)
 //
 // Runs in the browser. Open tests.html via a local server
 // (npx serve  /  python3 -m http.server) — not file://.
-//
+
 // Uses a tiny home-grown harness so there is no framework/build step,
 // matching the rest of the project.
-//
+
 // Every test reports three things and the report shows all of them,
 // pass or fail:
 //   - input:    what was fed into the function(s) under test
@@ -416,5 +417,6 @@ async function fullTreeTests() {
   await userTests();
   await postTests();
   await fullTreeTests();
+  if (typeof treeRendererTests === 'function') await treeRendererTests();
   renderReport();
 })();
