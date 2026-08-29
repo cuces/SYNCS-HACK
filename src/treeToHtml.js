@@ -9,14 +9,15 @@
   // where each card shows heading, optional image, description, and date.
   function renderTreeAsGraph(tree, options = {}) {
     const { nodes = [], edges = [] } = tree || {};
-    const opts = Object.assign({ containerClass: 'post-graph', cssVars: {} }, options);
+    const opts = Object.assign({ containerClass: 'post-graph', cssVars: {}, rootId: null, highlightId: null }, options);
 
     const cardHtml = (n) => {
       const title = n.title ?? n.name ?? `#${n.post_id}`;
       const img = n.file ? `<div class="pt-card-img"><img src="${escapeHtml(n.file)}" alt="${escapeHtml(title)}"/></div>` : '';
       const desc = n.description ? `<div class="pt-card-desc">${escapeHtml(n.description)}</div>` : '';
       const date = n.created_at ? `<div class="pt-card-date">${escapeHtml(formatDate(n.created_at))}</div>` : '';
-      return `<div class="pt-card" data-id="${n.post_id}">
+      const highlightClass = String(n.post_id) === String(opts.highlightId) ? ' pt-card--highlight' : '';
+      return `<div class="pt-card${highlightClass}" data-id="${n.post_id}">
                 <div class="pt-card-heading">${escapeHtml(title)}</div>
                 ${img}
                 ${desc}
@@ -32,7 +33,7 @@
     }
 
     const css = buildCss(opts.containerClass, opts.cssVars);
-    // Prepare vis-network compatible nodes and edges JSON and embed for runtime.
+
     const visNodes = safeNodes.map(n => {
       const titleText = n.title || n.name || `#${n.post_id}`;
       const extra = [];
@@ -40,17 +41,30 @@
       if (n.created_at) extra.push(formatDate(n.created_at));
       const node = { id: n.post_id, label: titleText, title: extra.join(' \n ') || '' };
       if (n.file) {
-        // Use simple string `image` with `shape: 'image'` to avoid vis requiring
-        // special object properties for selected/unselected states.
         node.image = n.file;
         node.shape = 'image';
         node.size = 36;
       }
+      if (String(n.post_id) === String(opts.highlightId)) {
+        node.size = Math.max(node.size || 36, 56);
+        node.borderWidth = 3;
+      }
       return node;
     });
+
     const visEdges = (edges || []).map(e => ({ from: e.from, to: e.to }));
+
+    // find rootId if not explicitly provided
+    let rootId = opts.rootId;
+    if (!rootId) {
+      const toSet = new Set((visEdges || []).map(e => e.to));
+      const roots = (safeNodes || []).filter(n => !toSet.has(n.post_id));
+      rootId = roots.length ? roots[0].post_id : (safeNodes[0] && safeNodes[0].post_id);
+    }
+
     // embed raw JSON inside application/json script so enhanceGraph can parse it directly
-    const dataJson = '<script type="application/json" class="pt-vis-data">' + JSON.stringify({ nodes: visNodes, edges: visEdges }) + '</script>';
+    const dataJson = '<script type="application/json" class="pt-vis-data">' + JSON.stringify({ nodes: visNodes, edges: visEdges, rootId: rootId, highlightId: opts.highlightId }) + '</script>';
+
     // build card HTML as a graceful fallback when vis isn't available
     const cards = safeNodes.map(cardHtml).join('\n');
     // The vis container will be initialized by enhanceGraph when vis-network is available.
@@ -123,6 +137,7 @@
       .${containerClass} .pt-card-img img { width: 100%; height: auto; border-radius: 6px; margin-bottom: 6px; display: block; }
       .${containerClass} .pt-card-desc { font-size: 0.9rem; color: #333; margin-bottom: 6px; }
       .${containerClass} .pt-card-date { font-size: 0.78rem; color: #666; }
+      .${containerClass} .pt-card--highlight { box-shadow: 0 10px 26px rgba(0,0,0,0.06); border: 2px solid #d6c9b8; transform: translateZ(0); }
       .${containerClass} .pt-empty { color: #666; font-style: italic; padding: 0.5rem 0; }
       .${containerClass} .pt-vis { width: 100%; height: 100%; background: var(--pt-card-bg); }
       .${containerClass} .pt-vis .vis-network { background: transparent; }
