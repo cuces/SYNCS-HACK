@@ -101,6 +101,55 @@ async function getLineage(post_id) {
   return chain; // [most recent, ..., original]
 }
 
+// Returns the WHOLE adaptation tree a post belongs to — not just its straight
+// line back to the root (that's getLineage), but every sibling and descendant
+// branch too. Use this to render the full lineage graph for a post.
+//
+// Strategy:
+//   1. Walk adapted_from upward to find the root of the tree.
+//   2. From the root, walk back down breadth-first: at each level, query every
+//      post whose adapted_from points at a node in the current level.
+//   3. Derive edges from adapted_from (edges are never stored, only computed).
+//
+// Returns { nodes, edges } where:
+//   nodes = flat array of every post in the tree (root + all branches)
+//   edges = [{ from: parentPostId, to: childPostId }] for every non-root node
+async function getFullTree(post_id) {
+  let root = await db.posts.get(post_id);
+  if (!root) return { nodes: [], edges: [] };
+
+  // 1. Climb to the root. `seen` guards against a broken adapted_from cycle.
+  const seen = new Set([root.post_id]);
+  while (root.adapted_from != null && !seen.has(root.adapted_from)) {
+    const parent = await db.posts.get(root.adapted_from);
+    if (!parent) break; // dangling parent ref — treat current post as the root
+    seen.add(parent.post_id);
+    root = parent;
+  }
+
+  // 2. Breadth-first walk down from the root, collecting every descendant.
+  const nodes = [root];
+  const visited = new Set([root.post_id]);
+  let level = [root.post_id];
+  while (level.length) {
+    const children = await db.posts.where('adapted_from').anyOf(level).toArray();
+    const fresh = children.filter(c => !visited.has(c.post_id));
+    if (!fresh.length) break;
+    for (const c of fresh) {
+      visited.add(c.post_id);
+      nodes.push(c);
+    }
+    level = fresh.map(c => c.post_id);
+  }
+
+  // 3. Derive render edges from each non-root node's adapted_from.
+  const edges = nodes
+    .filter(p => p.post_id !== root.post_id)
+    .map(p => ({ from: p.adapted_from, to: p.post_id }));
+
+  return { nodes, edges };
+}
+
 // Finds posts that share at least one tag with the provided post for relationship graphing.
 async function getRelatedPosts(post_id) {
   const post = await db.posts.get(post_id);

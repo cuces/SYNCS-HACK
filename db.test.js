@@ -321,11 +321,100 @@ async function postTests() {
   });
 }
 
+// ---------- Full adaptation tree (getFullTree) ----------
+//
+// Tree shape used by these tests:
+//
+//        root
+//        /  \
+//     childA  childB
+//       |
+//   grandchild
+//
+async function fullTreeTests() {
+  // Helper: build the tree above and return the ids.
+  async function buildTree() {
+    const familyId = await createFamily('Nguyen');
+    const mk = (title, adapted_from = null) =>
+      createPost({ poster_id: 1, family_id: familyId, title, description: '', file: null, category: 'recipe', adapted_from });
+    const root = await mk('root');
+    const childA = await mk('childA', root);
+    const childB = await mk('childB', root);
+    const grandchild = await mk('grandchild', childA);
+    return { root, childA, childB, grandchild };
+  }
+
+  await test('getFullTree from the root returns every node in the tree', async () => {
+    const t = await buildTree();
+    const input = { tree: t, query: `getFullTree(${t.root})` };
+
+    const { nodes } = await getFullTree(t.root);
+    return {
+      input,
+      expected: { count: 4, ids: [t.root, t.childA, t.childB, t.grandchild].sort((a, b) => a - b) },
+      actual: { count: nodes.length, ids: nodes.map(n => n.post_id).sort((a, b) => a - b) }
+    };
+  });
+
+  await test('getFullTree from a leaf still returns the whole tree (siblings + cousins visible)', async () => {
+    const t = await buildTree();
+    const input = { tree: t, query: `getFullTree(${t.grandchild})  // deepest leaf` };
+
+    const { nodes } = await getFullTree(t.grandchild);
+    const ids = nodes.map(n => n.post_id).sort((a, b) => a - b);
+    return {
+      input,
+      expected: { count: 4, includesSiblingBranch: true, ids: [t.root, t.childA, t.childB, t.grandchild].sort((a, b) => a - b) },
+      actual: { count: nodes.length, includesSiblingBranch: ids.includes(t.childB), ids }
+    };
+  });
+
+  await test('getFullTree derives one edge per non-root node (from adapted_from)', async () => {
+    const t = await buildTree();
+    const input = { tree: t, query: `getFullTree(${t.childB})` };
+
+    const { edges } = await getFullTree(t.childB);
+    const norm = edges.map(e => `${e.from}->${e.to}`).sort();
+    return {
+      input,
+      expected: {
+        count: 3,
+        edges: [`${t.root}->${t.childA}`, `${t.root}->${t.childB}`, `${t.childA}->${t.grandchild}`].sort()
+      },
+      actual: { count: edges.length, edges: norm }
+    };
+  });
+
+  await test('getFullTree on a lone post returns just that node and no edges', async () => {
+    const familyId = await createFamily('Nguyen');
+    const lone = await createPost({ poster_id: 1, family_id: familyId, title: 'Lone', description: '', file: null, category: 'recipe' });
+    const input = { post: { id: lone }, query: `getFullTree(${lone})` };
+
+    const { nodes, edges } = await getFullTree(lone);
+    return {
+      input,
+      expected: { nodeCount: 1, nodeId: lone, edgeCount: 0 },
+      actual: { nodeCount: nodes.length, nodeId: nodes[0] ? nodes[0].post_id : null, edgeCount: edges.length }
+    };
+  });
+
+  await test('getFullTree on a missing post id returns empty nodes and edges', async () => {
+    const input = { post_id: 999999, query: 'getFullTree(999999)' };
+    const { nodes, edges } = await getFullTree(999999);
+    return {
+      input,
+      expected: { nodeCount: 0, edgeCount: 0 },
+      actual: { nodeCount: nodes.length, edgeCount: edges.length }
+    };
+  });
+}
+
 // ---------- Run everything ----------
 
 (async function run() {
   await familyTests();
   await userTests();
   await postTests();
+  await fullTreeTests();
   renderReport();
 })();
