@@ -7,7 +7,7 @@
 async function seedTests() {
 
   // ---- DATA shape (no database) ----
-  await test('showcase DATA describes three well-formed lineages', async () => {
+  await test('showcase DATA is well-formed (keys unique, parents resolve)', async () => {
     const D = window.showcaseSeed.DATA;
     const keys = D.posts.map(p => p.key);
     const roots = D.posts.filter(p => p.from === null);
@@ -17,10 +17,10 @@ async function seedTests() {
     return {
       input: { postCount: D.posts.length, userCount: D.users.length },
       expected: {
-        posts: 11, users: 3,
-        roots: 3,               // dumplings + flatbread + ragù
+        posts: 20, users: 3,
+        roots: 10,              // 3 recipe roots + 7 non-recipe memories
         uniqueKeys: true, danglingParents: 0,
-        published: 10, private: 1
+        published: 18, private: 2
       },
       actual: {
         posts: D.posts.length,
@@ -46,7 +46,7 @@ async function seedTests() {
 
     return {
       input: {},
-      expected: { families: 1, users: 3, posts: 11, published: 10, rootTitle: "Popo's Lunar New Year Jiaozi" },
+      expected: { families: 1, users: 3, posts: 20, published: 18, rootTitle: "Popo's Lunar New Year Jiaozi" },
       actual: {
         families, users, posts,
         published: published.length,
@@ -113,15 +113,15 @@ async function seedTests() {
     };
   });
 
-  // ---- locations: most mappable, a couple not ----
-  await test('reseed() sets coordinates on 9 posts and countries on 10', async () => {
+  // ---- locations: most mappable, a few not ----
+  await test('reseed() sets coordinates on 17 posts and countries on 18', async () => {
     await window.showcaseSeed.clear();
     await window.showcaseSeed.reseed();
     const posts = await db.posts.toArray();
 
     return {
       input: {},
-      expected: { withCoords: 9, withCountry: 10, chinaPosts: 3, australiaPosts: 2 },
+      expected: { withCoords: 17, withCountry: 18, chinaPosts: 6, australiaPosts: 3 },
       actual: {
         withCoords: posts.filter(p => p.lat != null && p.lng != null).length,
         withCountry: posts.filter(p => p.country).length,
@@ -131,17 +131,59 @@ async function seedTests() {
     };
   });
 
-  // ---- images: every seeded post carries a bundled /resource photo ----
-  await test('reseed() gives every post a bundled /resource image', async () => {
+  // ---- images: the food posts carry a bundled /resource photo; the non-recipe
+  //      memories deliberately have none (they fall back to a category icon) ----
+  await test('reseed() photographs the food posts and leaves the rest imageless', async () => {
     await window.showcaseSeed.clear();
     await window.showcaseSeed.reseed();
     const posts = await db.posts.toArray();
     const withImage = posts.filter(p => typeof p.file === 'string' && p.file.indexOf('/resource/') === 0);
+    const recipesImaged = posts
+      .filter(p => p.category === 'recipe')
+      .every(p => typeof p.file === 'string' && p.file.indexOf('/resource/') === 0);
 
     return {
       input: {},
-      expected: { total: 11, withResourceImage: 11 },
-      actual: { total: posts.length, withResourceImage: withImage.length }
+      expected: { total: 20, withResourceImage: 11, everyRecipeImaged: true },
+      actual: { total: posts.length, withResourceImage: withImage.length, everyRecipeImaged: recipesImaged }
+    };
+  });
+
+  // ---- backfillImages() heals an archive seeded before posts had photos ----
+  await test('backfillImages() restores missing / stale showcase photos, leaves uploads alone', async () => {
+    await window.showcaseSeed.clear();
+    await window.showcaseSeed.reseed();
+
+    const byTitle = async (t) => (await db.posts.filter(p => p.title === t).first());
+    const JIAOZI = "Popo's Lunar New Year Jiaozi";
+    const POT = "Mum's Pan-Fried Potstickers";
+    const MANDU = 'Kimchi Mandu (from our neighbour Jisoo)';
+
+    // Simulate an older archive: one photo wiped, one pointing at a stale
+    // placeholder, one replaced by a user's own uploaded image.
+    await db.posts.update((await byTitle(JIAOZI)).post_id, { file: null });
+    await db.posts.update((await byTitle(POT)).post_id, { file: '/resource/test1.jpg' });
+    await db.posts.update((await byTitle(MANDU)).post_id, { file: 'data:image/png;base64,AAAA' });
+
+    const fixed = await window.showcaseSeed.backfillImages();
+    const rows = await db.posts.toArray();
+
+    return {
+      input: {},
+      expected: {
+        fixed: 2,
+        jiaozi: '/resource/dumpling1.jpg',
+        potstickers: '/resource/dumpling2.jpg',
+        mandu: 'data:image/png;base64,AAAA',   // user upload left untouched
+        allWithImage: 11
+      },
+      actual: {
+        fixed: fixed,
+        jiaozi: rows.find(p => p.title === JIAOZI).file,
+        potstickers: rows.find(p => p.title === POT).file,
+        mandu: rows.find(p => p.title === MANDU).file,
+        allWithImage: rows.filter(p => typeof p.file === 'string' && p.file.trim()).length
+      }
     };
   });
 
@@ -152,15 +194,15 @@ async function seedTests() {
     const onEmpty = await window.showcaseSeed.ensure();
     const countAfterEmpty = await db.posts.count();
 
-    // populated + fresh memo -> ensure sees the data and does nothing
+    // populated + fresh memo -> ensure sees the data and does not re-seed
     await window.showcaseSeed.clear();       // resets the memo
-    await window.showcaseSeed.reseed();      // 7 posts
+    await window.showcaseSeed.reseed();      // full archive
     const onPopulated = await window.showcaseSeed.ensure();
     const countAfterPopulated = await db.posts.count();
 
     return {
       input: {},
-      expected: { seededWhenEmpty: true, countAfterEmpty: 11, seededWhenPopulated: false, countAfterPopulated: 11 },
+      expected: { seededWhenEmpty: true, countAfterEmpty: 20, seededWhenPopulated: false, countAfterPopulated: 20 },
       actual: {
         seededWhenEmpty: onEmpty.seeded,
         countAfterEmpty,

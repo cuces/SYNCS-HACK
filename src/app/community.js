@@ -25,6 +25,7 @@
     Recipes: '<path d="M6 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3"/><path d="M8 12v9"/><path d="M17 3c-1.5 1.5-2 3-2 5s.5 3 2 4v9"/>',
     Stories: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>',
     Traditions: '<path d="M12 3v18"/><path d="M5 8l7-5 7 5"/><path d="M5 8v8l7 5 7-5V8"/>',
+    Skills: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"/>',
     Memories: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/>',
     Music: '<circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M9 18V5l12-2v13"/>',
     'Family History': '<path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-8 5"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>'
@@ -34,6 +35,7 @@
     { key: 'Recipes', label: 'Recipes' },
     { key: 'Stories', label: 'Stories' },
     { key: 'Traditions', label: 'Traditions' },
+    { key: 'Skills', label: 'Skills' },
     { key: 'Memories', label: 'Memories' },
     { key: 'Music', label: 'Music' },
     { key: 'Family History', label: 'History' }
@@ -42,7 +44,7 @@
   // Fold a raw post category onto one of the rail buckets above.
   var BUCKET_BY_KEY = {
     recipe: 'Recipes', story: 'Stories', tradition: 'Traditions',
-    memory: 'Memories', photo: 'Memories', music: 'Music',
+    skill: 'Skills', memory: 'Memories', photo: 'Memories', music: 'Music',
     audio: 'Music', history: 'Family History'
   };
   function bucketFor(category) {

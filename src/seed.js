@@ -1,22 +1,22 @@
 // seed.js — demo showcase data.
 //
-// Loads three recipe lineages into the archive so every page has something
-// real to show during the demo:
-//   - the Chen family dumpling tree (7 memories, one private) — the same tree
-//     the filter scenarios in test/map.test.js exercise
-//   - two small standalone pairs (flatbread, ragù) so the community graph has
-//     more than one tree
+// Loads the Chen family archive so every page has something real to show:
+//   - the dumpling recipe tree (7 memories, one private) — the same tree the
+//     filter scenarios in test/map.test.js exercise
+//   - two small standalone recipe pairs (flatbread, ragù)
+//   - a spread of NON-recipe memories: rituals & customs, crafts & skills,
+//     stories & beliefs, dialect words, a lullaby, a family-name history —
+//     some standalone, some in their own little two-memory lineages
 //
-//   - Family board  : all 11 memories of The Chen Family
-//   - Community      : the 10 published ones, across ~7 cultures
+//   - Family board  : all 20 memories of The Chen Family
+//   - Community      : the 18 published ones, across ~9 ethnicities
 //   - Post detail    : full descriptions + the lineage graph / map embedded below
-//   - Map & graph    : China (x3 cities), South Korea, Poland, Lebanon, Italy,
-//                      Australia (x2) as markers; Nepal has a country but no pin
-//                      yet; the freezer note has neither
+//   - Map & graph    : China, South Korea, Poland, Japan, Lebanon, Italy,
+//                      Ireland, Australia as markers; Nepal is country-only;
+//                      the freezer note and the dialect list have no location
 //
-// Every seeded post carries a bundled recipe photo (`image`, a file in
-// /resource served from the repo root), so the boards, cards, post pages and
-// graph nodes all show real imagery in the demo.
+// Recipe posts carry a bundled photo from /resource (`image`); the non-recipe
+// memories have no photo and fall back to their category icon on the boards.
 //
 // Idempotent: ensure() seeds only when the archive is empty. reseed() forces a
 // fresh copy; clear() wipes everything.
@@ -157,6 +157,113 @@
         description:
           'Same order of operations as Nonna Rosa, but everything goes into the ' +
           'slow cooker before work and is ready by the time we are home.'
+      },
+
+      // --- Not everything handed down is a recipe. Rituals, crafts, sayings,
+      //     stories and beliefs — some standalone, some their own tiny lineage. ---
+
+      // Ritual / custom, adapted for the diaspora.
+      {
+        key: 'qingming', from: null, by: 2, published: true, category: 'tradition',
+        country: 'China', lat: 32.0603, lng: 118.7969, // Nanjing
+        tags: ['chinese', 'tradition', 'ancestors', 'qingming'],
+        title: "Qingming: Sweeping the Ancestors' Graves",
+        description:
+          'Every April we clear the weeds from the family graves, lay out oranges ' +
+          'and rice wine, and burn paper money so our ancestors want for nothing. ' +
+          'Popo taught us to bow three times, youngest last.'
+      },
+      {
+        key: 'qingming-syd', from: 'qingming', by: 0, published: true, category: 'tradition',
+        country: 'Australia', lat: -33.8688, lng: 151.2093, // Sydney
+        tags: ['australian', 'tradition', 'ancestors', 'diaspora'],
+        title: 'Qingming in a Sydney Backyard',
+        description:
+          "No graves to visit here, so we set a small table under the lemon tree " +
+          "with a photo of Gong Gong, his favourite tea and a bowl of oranges. " +
+          'Same three bows. The kids fold the paper money now.'
+      },
+
+      // Craft / skill, passed sideways between two traditions.
+      {
+        key: 'darning', from: null, by: 1, published: true, category: 'skill',
+        country: 'Poland', lat: 52.2297, lng: 21.0122, // Warsaw
+        tags: ['polish', 'skill', 'mending', 'wool'],
+        title: 'Darning a Worn Wool Heel',
+        description:
+          'Babcia never threw out a sock. Stretch the hole over a wooden mushroom, ' +
+          'lay a grid of long stitches, then weave across them one row at a time ' +
+          'until the hole is a small woven patch.'
+      },
+      {
+        key: 'sashiko-mend', from: 'darning', by: 0, published: true, category: 'skill',
+        country: 'Japan', lat: 35.6762, lng: 139.6503, // Tokyo
+        tags: ['japanese', 'skill', 'mending', 'sashiko'],
+        title: 'Visible Mending, Sashiko-Style',
+        description:
+          "Took Babcia's darning idea to my jeans — rows of running stitch in white " +
+          'thread over a scrap of indigo cloth behind the tear. It is meant to be ' +
+          'seen. That knee is now stronger than the rest of the jeans.'
+      },
+
+      // Story / belief.
+      {
+        key: 'magpie-omen', from: null, by: 2, published: true, category: 'story',
+        country: 'South Korea', lat: 37.5665, lng: 126.9780, // Seoul
+        tags: ['korean', 'story', 'belief', 'birds'],
+        title: 'The Magpie Brings News',
+        description:
+          "Our neighbour Jisoo's grandmother swears a magpie calling at your gate in " +
+          'the morning means a welcome visitor by evening. We have started noticing. ' +
+          'She is more right than she should be.'
+      },
+
+      // Sayings / small superstitions.
+      {
+        key: 'touch-wood', from: null, by: 1, published: true, category: 'tradition',
+        country: 'Ireland', lat: 53.3498, lng: -6.2603, // Dublin
+        tags: ['irish', 'tradition', 'superstition', 'sayings'],
+        title: '"Touch Wood" and the Small Superstitions',
+        description:
+          "From Nana Brigid's side: never put new shoes on the table, don't pass " +
+          "someone on the stairs, and always say 'touch wood' out loud and actually " +
+          'touch some. Half of us do not believe it and all of us do it.'
+      },
+
+      // Phrases / dialect — location-agnostic, so no pin.
+      {
+        key: 'dialect-words', from: null, by: 0, published: true, category: 'story',
+        country: null, lat: null, lng: null,
+        tags: ['australian', 'story', 'dialect', 'language'],
+        title: 'The Words That Only Make Sense at Home',
+        description:
+          "A running list of family shorthand: 'chook' for chicken, 'the good " +
+          "scissors', 'having a barbie', 'doing a Gong Gong' (leaving a party " +
+          'without saying goodbye). Written down so the little ones inherit them.'
+      },
+
+      // Music — private for now.
+      {
+        key: 'lullaby', from: null, by: 2, published: false, category: 'music',
+        country: 'China', lat: 39.9042, lng: 116.4074, // Beijing
+        tags: ['chinese', 'music', 'lullaby', 'popo'],
+        title: 'The Lullaby Popo Hums',
+        description:
+          'She does not know where she learned it and cannot remember any words — ' +
+          'just a slow six-note tune she hums while cooking. Recorded it on my phone ' +
+          'before it is gone. Keeping this one in the family.'
+      },
+
+      // Family history — a name that changed at the docks.
+      {
+        key: 'name-story', from: null, by: 2, published: true, category: 'history',
+        country: 'China', lat: 23.1291, lng: 113.2644, // Guangzhou
+        tags: ['chinese', 'history', 'name', 'migration'],
+        title: 'How Chen Became the Family Name in English',
+        description:
+          "The clerk at the shipping office in 1962 could not spell what Gong Gong " +
+          "said, so he wrote 'Chen' and that was that. Our cousins who sailed to San " +
+          "Francisco the same year are 'Chin'. Same family."
       }
     ]
   };
@@ -210,6 +317,32 @@
     return { seeded: true, rootPostId: rootPostId };
   }
 
+  // One-off heal for archives seeded before posts carried photos (or seeded
+  // with an earlier placeholder image). Matches showcase posts by title and
+  // sets `file` to the DATA image when it's missing or points at a stale
+  // /resource path. Never touches a user's own uploaded photo (a data: URL) and
+  // never deletes anything.
+  function looksLikeResourcePath(f) {
+    return typeof f === 'string' && /(^|\/)resource\//.test(f);
+  }
+  async function backfillImages() {
+    const wanted = new Map(
+      DATA.posts.filter(function (p) { return p.image; }).map(function (p) { return [p.title, p.image]; })
+    );
+    const rows = await db.posts.toArray();
+    const updates = [];
+    for (const row of rows) {
+      if (!wanted.has(row.title)) continue;
+      const target = wanted.get(row.title);
+      const current = row.file;
+      const missing = !(typeof current === 'string' && current.trim());
+      const staleResource = looksLikeResourcePath(current) && current !== target;
+      if (missing || staleResource) updates.push(db.posts.update(row.post_id, { file: target }));
+    }
+    if (updates.length) await Promise.all(updates);
+    return updates.length;
+  }
+
   // Find a good root for the lineage graph in an archive that already has data.
   async function findRoot() {
     const match = await db.posts.filter(function (p) {
@@ -227,7 +360,10 @@
     if (!ensurePromise) {
       ensurePromise = (async function () {
         const count = await db.posts.count();
-        if (count > 0) return { seeded: false, rootPostId: await findRoot() };
+        if (count > 0) {
+          await backfillImages(); // heal archives seeded before posts had photos
+          return { seeded: false, rootPostId: await findRoot() };
+        }
         return reseed();
       })().catch(function (err) {
         console.error('showcase seed failed:', err);
@@ -240,8 +376,9 @@
 
   global.showcaseSeed = {
     DATA: DATA,
-    ensure: ensure,   // idempotent; call from anywhere, share one run
-    reseed: reseed,   // wipe + fresh copy
+    ensure: ensure,                 // idempotent; call from anywhere, share one run
+    reseed: reseed,                 // wipe + fresh copy
+    backfillImages: backfillImages, // heal photos on an already-seeded archive
     clear: clear
   };
 })(window);

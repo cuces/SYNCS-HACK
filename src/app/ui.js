@@ -23,6 +23,7 @@
     story: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>',
     memory: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/>',
     tradition: '<path d="M12 3v18"/><path d="M5 8l7-5 7 5"/><path d="M5 8v8l7 5 7-5V8"/>',
+    skill: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"/>',
     music: '<circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M9 18V5l12-2v13"/>',
     audio: '<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M16 9a4 4 0 0 1 0 6"/>',
     history: '<path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-8 5"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>',
@@ -45,7 +46,8 @@
     if (c.indexOf('recipe') === 0) return 'recipe';
     if (c.indexOf('stor') === 0) return 'story';
     if (c.indexOf('memor') === 0) return 'memory';
-    if (c.indexOf('tradition') === 0) return 'tradition';
+    if (c.indexOf('tradition') === 0 || c.indexOf('ritual') === 0 || c.indexOf('custom') === 0) return 'tradition';
+    if (c.indexOf('skill') === 0 || c.indexOf('craft') === 0) return 'skill';
     if (c === 'music' || c === 'song') return 'music';
     if (c === 'audio' || c === 'recording') return 'audio';
     if (c.indexOf('histor') === 0) return 'history';
