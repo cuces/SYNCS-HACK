@@ -16,7 +16,7 @@ const COUNTRY_COORDS = {
   'Mexico': [23.635, -102.553],
   'France': [46.228, 2.214],
 
-  // Cultures already used in the seed data
+  // Ethnicities already used in the seed data
   'China': [35.862, 104.195],
   'Greece': [39.074, 21.824],
   'South Korea': [35.908, 127.767],

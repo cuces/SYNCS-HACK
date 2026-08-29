@@ -40,10 +40,10 @@ function populateCountries() {
 const activeFormats = { bold: false, italic: false, underline: false };
 let uploadedImages = [];
 
-// Custom culture / memory-type values entered here land in the post's `tags`.
-// The My Family board derives its "Custom cultures" / "Custom tags" dropdowns
-// from the tags on PUBLISHED posts, so anything shared to the community shows
-// up there automatically — no separate registry needed.
+// Custom ethnicity / memory-type values entered here land in the post's `tags`.
+// The Community archive derives its "Other" ethnicity dropdown and the My Family
+// board its "Custom tags" dropdown from the tags on PUBLISHED posts, so anything
+// shared to the community shows up there automatically — no separate registry.
 
 // When the page is opened as add-memory.html?adaptedFrom=<post_id>, the new
 // memory is created as a child of that post: `adapted_from` is set on save, so
@@ -71,7 +71,7 @@ function showAdaptingBanner(parent) {
   if (submitBtn) submitBtn.textContent = 'Save adaptation';
 }
 
-// Best-effort: copy the parent's country / culture / type so the branch starts
+// Best-effort: copy the parent's country / ethnicity / type so the branch starts
 // from the same place. The user can still change anything.
 function prefillFromParent(parent) {
   if (countrySelect && parent.country) {
@@ -90,7 +90,7 @@ function prefillFromParent(parent) {
 
   const tags = Array.isArray(parent.tags) ? parent.tags.map((t) => String(t).toLowerCase()) : [];
 
-  // Culture: match a radio, else fall back to the custom field.
+  // Ethnicity: match a radio, else fall back to the "Other" field.
   const cultureTag = tags[0];
   if (cultureTag) {
     const match = document.querySelector('input[name="cuisine"][value="' + cultureTag + '"]');
@@ -306,8 +306,8 @@ form.addEventListener('submit', async (e) => {
   if (!title) return showError('Please enter a title for your memory.');
   if (!memoryType) return showError('Please choose a memory type.');
   if (memoryType === 'custom' && !customMemoryType) return showError('Please enter a custom memory type.');
-  if (!cuisine) return showError('Please choose a cuisine or culture.');
-  if (cuisine === 'custom-cuisine' && !customCuisine) return showError('Please enter a custom culture.');
+  if (!cuisine) return showError('Please choose a cuisine or ethnicity.');
+  if (cuisine === 'custom-cuisine' && !customCuisine) return showError('Please enter an ethnicity.');
   if (!description || !content || content === '<br>' || content === '<div><br></div>') {
     return showError('Please write something in the description.');
   }
@@ -329,8 +329,9 @@ form.addEventListener('submit', async (e) => {
       ? members[0].user_id
       : await createUser({ name: 'You', family_id: familyId, email: null, phone: null });
 
-    // tags[0] is always the culture; tags[1] the memory type. The My Family
-    // board reads these positions to build its custom-culture / custom-tag lists.
+    // tags[0] is always the ethnicity; tags[1] the memory type. The Community
+    // archive and the My Family board read these positions to build their
+    // "Other" ethnicity / custom-tag lists.
     const cultureTag = (cuisine === 'custom-cuisine' ? customCuisine : cuisine).toLowerCase();
     const tagList = [cultureTag];
     if (memoryType === 'custom') tagList.push(customMemoryType.toLowerCase());

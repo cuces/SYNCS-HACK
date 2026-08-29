@@ -81,7 +81,7 @@
       title: post.title || 'Untitled',
       description: post.description || '',
       category: post.category || '',
-      // First tag, if any — used as a secondary label (e.g. a culture).
+      // First tag, if any — used as a secondary label (e.g. an ethnicity).
       tag: tags.length ? String(tags[0]) : null,
       // Every tag on the post, lower-cased. Drives the family board's tag filter.
       tags: tags.map(function (t) { return String(t).toLowerCase(); }),
@@ -176,7 +176,7 @@
 
     // Custom tags for the My Family filter dropdown. Only from PUBLISHED posts
     // (so "public" is respected), and only the free-text values — the built-in
-    // radio options are filtered out. Convention: tags[0] is the culture (not
+    // radio options are filtered out. Convention: tags[0] is the ethnicity (not
     // filtered on here), tags[1..] the memory type(s).
     const STANDARD_TYPES = ['recipes', 'stories', 'skills'];
     const tagSet = new Set();
