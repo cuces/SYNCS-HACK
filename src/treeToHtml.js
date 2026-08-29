@@ -202,7 +202,9 @@
               springConstant: 0.04,
               avoidOverlap: 1
             },
-            stabilization: { iterations: 250, updateInterval: 25 }
+            // Run the whole stabilization off-screen and only paint the final
+            // layout, so the user never sees the graph settling/spinning.
+            stabilization: { enabled: true, iterations: 400, updateInterval: 400, fit: true }
           }
         };
         try {
@@ -213,46 +215,22 @@
           const canvas = container.querySelector('.pt-canvas');
           if (canvas) canvas.style.display = 'none';
           visContainer.style.display = 'block';
-          // After initial stabilization, disable physics so the graph stops moving/rotating.
-          try {
-            // After stabilization, reduce physics intensity rather than disabling it
-            network.once && network.once('stabilizationIterationsDone', function () {
-              try {
-                network.setOptions({
-                  physics: {
-                    enabled: true,
-                    barnesHut: {
-                      gravitationalConstant: -1500,
-                      centralGravity: 0.12,
-                      springLength: 220,
-                      springConstant: 0.02,
-                      avoidOverlap: 0.5
-                    },
-                    stabilization: { enabled: false }
-                  }
-                });
-              } catch (e) {}
-            });
-          } catch (e) {}
-          // Fallback: if stabilization event doesn't fire, reduce physics shortly after render
-          setTimeout(() => {
+          // Physics is only used to lay the tree out once. As soon as it has
+          // settled we turn it OFF completely — otherwise the force-directed
+          // layout keeps drifting and rotating (it has no fixed orientation),
+          // and any hover/drag/redraw nudges it again.
+          const freezeLayout = () => {
             try {
-              network.setOptions({
-                physics: {
-                  enabled: true,
-                  barnesHut: {
-                    gravitationalConstant: -1500,
-                    centralGravity: 0.12,
-                    springLength: 220,
-                    springConstant: 0.02,
-                    avoidOverlap: 0.5
-                  },
-                  stabilization: { enabled: false }
-                }
-              });
+              network.storePositions();               // bake settled x/y into the data
+              network.setOptions({ physics: { enabled: false } });
               network.redraw();
             } catch (e) {}
-          }, 800);
+          };
+          try {
+            network.once && network.once('stabilizationIterationsDone', freezeLayout);
+          } catch (e) {}
+          // Fallback in case the stabilization event never fires.
+          setTimeout(freezeLayout, 1200);
           setTimeout(() => { try { network.redraw(); } catch (e) {} }, 150);
           return;
         } catch (e) {

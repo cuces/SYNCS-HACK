@@ -152,4 +152,55 @@ async function treeRendererTests() {
         graphic: html
       };
     });
+
+    // enhanceGraph should use physics ONLY to lay the tree out, then switch it
+    // off — otherwise the force-directed graph keeps drifting/rotating on the page.
+    await test('enhanceGraph turns physics off once the layout has stabilised', async () => {
+      // Minimal fake vis-network that records setOptions calls and fires the
+      // stabilization event on the next tick.
+      const setOptionsCalls = [];
+      let storePositionsCalled = false;
+      const realVis = window.vis;
+      window.vis = {
+        Network: function (el, data, options) {
+          this._handlers = {};
+          this.once = (ev, fn) => { this._handlers[ev] = fn; };
+          this.setOptions = (o) => { setOptionsCalls.push(o); };
+          this.storePositions = () => { storePositionsCalled = true; };
+          this.redraw = () => {};
+          setTimeout(() => {
+            if (this._handlers['stabilizationIterationsDone']) this._handlers['stabilizationIterationsDone']();
+          }, 0);
+        }
+      };
+
+      try {
+        const container = document.createElement('div');
+        container.innerHTML = renderTreeAsHtml({
+          nodes: [{ post_id: 1, title: 'root' }, { post_id: 2, title: 'child' }],
+          edges: [{ from: 1, to: 2 }]
+        });
+        document.body.appendChild(container);
+
+        enhanceGraph(container);
+        // let the fake stabilization event fire
+        await new Promise((r) => setTimeout(r, 20));
+
+        const physicsDisabled = setOptionsCalls.some(
+          (o) => o && o.physics && o.physics.enabled === false
+        );
+        const physicsReEnabled = setOptionsCalls.some(
+          (o) => o && o.physics && o.physics.enabled === true
+        );
+
+        container.remove();
+        return {
+          input: { fakeVis: true },
+          expected: { physicsDisabled: true, physicsReEnabled: false, positionsStored: true },
+          actual: { physicsDisabled, physicsReEnabled, positionsStored: storePositionsCalled }
+        };
+      } finally {
+        window.vis = realVis;
+      }
+    });
 }
