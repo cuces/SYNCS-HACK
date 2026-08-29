@@ -10,6 +10,41 @@
 // Requires Leaflet (global `L`) to be loaded first. No dependency on Dexie or
 // db.js: the caller fetches the tree and passes it in.
 
+// Returns a new { nodes, edges } keeping only the nodes that match every
+// provided filter:
+//   - country: keep posts whose `country` equals this exactly
+//   - tag:     keep posts whose `tags` array includes this
+// A null / undefined / '' value for a filter means "don't filter on it".
+// An edge survives only if BOTH of its endpoints survived.
+function filterTree(tree, filters) {
+  const country = filters && filters.country ? filters.country : null;
+  const tag = filters && filters.tag ? filters.tag : null;
+
+  const nodes = ((tree && tree.nodes) || []).filter(p => {
+    if (country && p.country !== country) return false;
+    if (tag && !(Array.isArray(p.tags) && p.tags.includes(tag))) return false;
+    return true;
+  });
+
+  const kept = new Set(nodes.map(p => p.post_id));
+  const edges = ((tree && tree.edges) || []).filter(e => kept.has(e.from) && kept.has(e.to));
+
+  return { nodes, edges };
+}
+
+// Distinct, sorted values for building the filter dropdowns from a tree.
+function distinctCountries(tree) {
+  const set = new Set(((tree && tree.nodes) || []).map(p => p.country).filter(Boolean));
+  return [...set].sort();
+}
+function distinctTags(tree) {
+  const set = new Set();
+  for (const p of (tree && tree.nodes) || []) {
+    if (Array.isArray(p.tags)) p.tags.forEach(t => set.add(t));
+  }
+  return [...set].sort();
+}
+
 // True when a post has a usable map location.
 function _hasLocation(p) {
   return p && p.lat != null && p.lng != null && !Number.isNaN(p.lat) && !Number.isNaN(p.lng);

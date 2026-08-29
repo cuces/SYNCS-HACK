@@ -192,10 +192,105 @@ async function geoTests() {
   });
 }
 
+// ---------- Map filters (filterTree + distinct* + re-render) ----------
+
+async function filterTests() {
+  // Demo-shaped tree: Vietnam → Mexico → France, plus an unlocated Vietnamese note.
+  const demoTree = () => ({
+    nodes: [
+      { post_id: 1, title: 'Phở',        country: 'Vietnam', tags: ['vietnamese', 'soup'], lat: 14.058, lng: 108.277 },
+      { post_id: 2, title: 'Caldo',      country: 'Mexico',  tags: ['mexican', 'soup'],    lat: 23.635, lng: -102.553 },
+      { post_id: 3, title: 'Pot-au-phở', country: 'France',  tags: ['french', 'stew'],     lat: 46.228, lng: 2.214 },
+      { post_id: 4, title: 'Note',       country: null,      tags: ['vietnamese', 'note'], lat: null,   lng: null }
+    ],
+    edges: [ { from: 1, to: 2 }, { from: 2, to: 3 }, { from: 1, to: 4 } ]
+  });
+
+  await test('distinctCountries / distinctTags return sorted, de-duped values for the dropdowns', async () => {
+    const tree = demoTree();
+    return {
+      input: { nodeCount: tree.nodes.length },
+      expected: {
+        countries: ['France', 'Mexico', 'Vietnam'],
+        tags: ['french', 'mexican', 'note', 'soup', 'stew', 'vietnamese']
+      },
+      actual: { countries: distinctCountries(tree), tags: distinctTags(tree) }
+    };
+  });
+
+  await test('filterTree by country keeps only that country and prunes now-dangling edges', async () => {
+    const tree = demoTree();
+    const input = { filter: { country: 'Mexico' } };
+    const out = filterTree(tree, input.filter);
+    return {
+      input,
+      expected: { nodeIds: [2], edges: [] },
+      actual: { nodeIds: out.nodes.map(n => n.post_id), edges: out.edges }
+    };
+  });
+
+  await test('filterTree by tag keeps every post carrying that tag, and edges between survivors', async () => {
+    const tree = demoTree();
+    const input = { filter: { tag: 'soup' } };
+    const out = filterTree(tree, input.filter);
+    return {
+      input,
+      expected: { nodeIds: [1, 2], edges: [{ from: 1, to: 2 }] },
+      actual: { nodeIds: out.nodes.map(n => n.post_id), edges: out.edges }
+    };
+  });
+
+  await test('filterTree applies country AND tag together', async () => {
+    const tree = demoTree();
+    const input = { filter: { country: 'Vietnam', tag: 'soup' } };
+    const out = filterTree(tree, input.filter);
+    return {
+      input,
+      expected: { nodeIds: [1] },
+      actual: { nodeIds: out.nodes.map(n => n.post_id) }
+    };
+  });
+
+  await test('filterTree with no filters returns the tree unchanged', async () => {
+    const tree = demoTree();
+    const out = filterTree(tree, {});
+    return {
+      input: { filter: {} },
+      expected: { nodes: 4, edges: 3 },
+      actual: { nodes: out.nodes.length, edges: out.edges.length }
+    };
+  });
+
+  await test('filtered tree renders only the matching markers on the map', async () => {
+    const tree = demoTree();
+    const input = { filter: { tag: 'soup' } };
+    const map = freshTestMap();
+    const result = plotTreeOnMap(map, filterTree(tree, input.filter));
+    return {
+      input,
+      expected: { markers: 2, lines: 1, skipped: 0 },
+      actual: { markers: result.markers, lines: result.lines, skipped: result.skipped }
+    };
+  });
+
+  await test('a filter that matches nothing renders an empty map without error', async () => {
+    const tree = demoTree();
+    const input = { filter: { country: 'Japan' } };
+    const map = freshTestMap();
+    const result = plotTreeOnMap(map, filterTree(tree, input.filter));
+    return {
+      input,
+      expected: { markers: 0, lines: 0 },
+      actual: { markers: result.markers, lines: result.lines }
+    };
+  });
+}
+
 // ---------- Run ----------
 
 (async function run() {
   await geoTests();
   await mapViewTests();
+  await filterTests();
   renderReport();
 })();
