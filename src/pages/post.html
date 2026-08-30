@@ -42,7 +42,8 @@
   --transition: 150ms var(--ease);
   --ring: 0 0 0 3px rgba(82, 120, 91, 0.28);
 
-  --page-max: 560px;
+  /* Width of the memory card and the lineage map on this page. */
+  --page-max: 840px;
 }
 
 * { box-sizing: border-box; }
@@ -83,10 +84,6 @@ ul, ol { margin: 0; padding: 0; }
   padding: var(--space-5) var(--space-5) var(--space-6);
   box-shadow: var(--shadow-lg);
   position: relative;
-  /* The memory card and the lineage map below are shown 1.5x larger on this
-     page. `zoom` scales the whole subtree AND reflows, so nothing overlaps
-     (unlike `transform: scale`). Reset to 1x on small screens (see media query). */
-  zoom: 1.5;
 }
 
 /* ===== Header row ===== */
@@ -296,7 +293,6 @@ ul, ol { margin: 0; padding: 0; }
   font-family: var(--font-display); font-size: 20px; font-weight: 500;
   letter-spacing: -0.011em; color: var(--ink);
   margin: 0 0 calc(-1 * var(--space-3));
-  zoom: 1.5;
 }
 .lineage-title span {
   display: block; font-family: var(--font-body); font-size: 13px; font-weight: 400;
@@ -310,12 +306,6 @@ ul, ol { margin: 0; padding: 0; }
   border-radius: var(--radius-xl);
   background: var(--card);
   box-shadow: var(--shadow-lg);
-  zoom: 1.5;
-}
-
-@media (max-width: 900px) {
-  /* Drop the 1.5x scale-up once it would no longer fit comfortably. */
-  .card, .lineage-title, .lineage-map { zoom: 1; }
 }
 
 @media (max-width: 560px) {
