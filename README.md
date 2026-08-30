@@ -1,6 +1,6 @@
-# Corner Stone
+# Cornerstone
 
-Entry for the team "cuces" for SYNCS Hackathon 2026 — **Corner Stone**, a warm,
+Entry for the team "cuces" for SYNCS Hackathon 2026 — **Cornerstone**, a warm,
 editorial archive for a family's stories, recipes and traditions.
 
 ## Usage
