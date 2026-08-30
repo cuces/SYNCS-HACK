@@ -248,12 +248,22 @@ ul, ol { margin: 0; padding: 0; }
 .privacy-btn[aria-pressed="false"] { flex: 0 0 auto; }
 
 /* "Extend memory" — creates the adaptive child in the lineage */
+.extend-row {
+  margin-top: var(--space-3);
+  display: flex;
+}
+/* When there's no privacy footer above it (e.g. a community memory you don't
+   own), the extend row carries the divider instead. */
+.privacy-footer[hidden] + .extend-row {
+  margin-top: var(--space-6); padding-top: var(--space-4);
+  border-top: 1px solid var(--hairline);
+}
 .extend-btn {
   height: 44px; padding: 0 var(--space-4); border-radius: var(--radius-sm);
   font-size: 13px; font-weight: 600; white-space: nowrap;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   border: 1px solid var(--clay); background: var(--clay); color: #F8F5EC;
-  flex: 1 1 160px;
+  flex: 1;
   transition: background var(--transition), border-color var(--transition);
 }
 .extend-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
@@ -397,6 +407,12 @@ ul, ol { margin: 0; padding: 0; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3Z"/></svg>
         Share to Community
       </button>
+    </div>
+
+    <!-- "Extend memory" — branch a new memory from this one (works for any
+         memory you're viewing, including other families' on the Community
+         board). Shown for every memory; see app/post.js. -->
+    <div class="extend-row" id="extend-row" hidden>
       <a class="extend-btn" id="extend-btn" href="add-memory.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="15" r="2.5"/><path d="M6 8.5v7"/><path d="M6 12h6a3 3 0 0 0 3-3V8.5"/></svg>
         Extend memory

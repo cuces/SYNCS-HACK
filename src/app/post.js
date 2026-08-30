@@ -35,9 +35,13 @@
 
     var privacyFooter = document.getElementById('privacy-footer');
     var editMemoryBtn = document.getElementById('edit-memory-btn');
+    var extendRow = document.getElementById('extend-row');
     var canEdit = !!post.canEdit;
+    // Privacy toggle + Edit are author-only; "Extend memory" is for anyone,
+    // since branching from another family's community memory is the whole point.
     if (privacyFooter) privacyFooter.hidden = !canEdit;
     if (editMemoryBtn) editMemoryBtn.hidden = !canEdit;
+    if (extendRow) extendRow.hidden = false;
 
     // Hero image (or a category placeholder, matching the board cards).
     var img = document.getElementById('detailImage');
