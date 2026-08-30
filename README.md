@@ -5,7 +5,7 @@ editorial archive for a family's stories, recipes and traditions.
  
 ## Usage
 
-Create a demo server using 
+In the root folder of the repository, Create a demo server using 
 ```py
 python -m http.server
 # or 
