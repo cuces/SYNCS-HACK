@@ -169,6 +169,7 @@
       // Ritual / custom, adapted for the diaspora.
       {
         key: 'qingming', from: null, by: 2, published: true, category: 'tradition',
+        image: '/resource/qingminggrave.jpg',
         country: 'China', lat: 32.0603, lng: 118.7969, // Nanjing
         tags: ['chinese', 'tradition', 'ancestors', 'qingming'],
         title: "Qingming: Sweeping the Ancestors' Graves",
@@ -179,6 +180,7 @@
       },
       {
         key: 'qingming-syd', from: 'qingming', by: 0, published: true, category: 'tradition',
+        image: '/resource/qingmingbackyard.jpg',
         country: 'Australia', lat: -33.8688, lng: 151.2093, // Sydney
         tags: ['australian', 'tradition', 'ancestors', 'diaspora'],
         title: 'Qingming in a Sydney Backyard',
@@ -191,6 +193,7 @@
       // Craft / skill, passed sideways between two traditions.
       {
         key: 'darning', from: null, by: 1, published: true, category: 'skill',
+        image: '/resource/socks.jpg',
         country: 'Poland', lat: 52.2297, lng: 21.0122, // Warsaw
         tags: ['polish', 'skill', 'mending', 'wool'],
         title: 'Darning a Worn Wool Heel',
@@ -201,6 +204,7 @@
       },
       {
         key: 'sashiko-mend', from: 'darning', by: 0, published: true, category: 'skill',
+        image: '/resource/mending.jpg',
         country: 'Japan', lat: 35.6762, lng: 139.6503, // Tokyo
         tags: ['japanese', 'skill', 'mending', 'sashiko'],
         title: 'Visible Mending, Sashiko-Style',
@@ -213,6 +217,7 @@
       // Story / belief.
       {
         key: 'magpie-omen', from: null, by: 2, published: true, category: 'story',
+        image: '/resource/magpienews.jpg',
         country: 'South Korea', lat: 37.5665, lng: 126.9780, // Seoul
         tags: ['korean', 'story', 'belief', 'birds'],
         title: 'The Magpie Brings News',
@@ -225,6 +230,7 @@
       // Sayings / small superstitions.
       {
         key: 'touch-wood', from: null, by: 1, published: true, category: 'tradition',
+        image: '/resource/touchwood.jpg',
         country: 'Ireland', lat: 53.3498, lng: -6.2603, // Dublin
         tags: ['irish', 'tradition', 'superstition', 'sayings'],
         title: '"Touch Wood" and the Small Superstitions',
@@ -237,6 +243,7 @@
       // Phrases / dialect — location-agnostic, so no pin.
       {
         key: 'dialect-words', from: null, by: 0, published: true, category: 'story',
+        image: '/resource/wordshome.jpg',
         country: null, lat: null, lng: null,
         tags: ['australian', 'story', 'dialect', 'language'],
         title: 'The Words That Only Make Sense at Home',
@@ -261,6 +268,7 @@
       // Family history — a name that changed at the docks.
       {
         key: 'name-story', from: null, by: 2, published: true, category: 'history',
+        image: '/resource/chenfam.jpg',
         country: 'China', lat: 23.1291, lng: 113.2644, // Guangzhou
         tags: ['chinese', 'history', 'name', 'migration'],
         title: 'How Chen Became the Family Name in English',
