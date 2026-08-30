@@ -35,6 +35,7 @@ src/
     community.js   Community archive controller
     saved.js       Saved page controller
     post.js        Memory detail controller
+resource/          Holds images and attachments used in memories
 test/              browser test runner (open test/tests.html via the server)
 design/            static HTML mockups — the visual source of truth
 ```
